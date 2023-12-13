@@ -1,6 +1,2 @@
 ﻿  ChessBoard.cpp
-C:\.School\.Howest\2DAE\Semester 1\Gameplay Programming\Github\2DAE-GPPChessEngine_Luan\ChessEngine_Luan\ChessBoard.cpp(802,122): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
-C:\.School\.Howest\2DAE\Semester 1\Gameplay Programming\Github\2DAE-GPPChessEngine_Luan\ChessEngine_Luan\ChessBoard.cpp(806,127): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
-C:\.School\.Howest\2DAE\Semester 1\Gameplay Programming\Github\2DAE-GPPChessEngine_Luan\ChessEngine_Luan\ChessBoard.cpp(843,122): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
-C:\.School\.Howest\2DAE\Semester 1\Gameplay Programming\Github\2DAE-GPPChessEngine_Luan\ChessEngine_Luan\ChessBoard.cpp(847,127): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
   ChessEngine_Luan.vcxproj -> C:\.School\.Howest\2DAE\Semester 1\Gameplay Programming\Github\2DAE-GPPChessEngine_Luan\ChessEngine_Luan\x64\Debug\ChessEngine_Luan.exe

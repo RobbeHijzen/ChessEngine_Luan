@@ -375,7 +375,6 @@ void ChessBoard::CalculatePawnMoves()
 	}
 #pragma endregion
 }
-
 void ChessBoard::CalculateKnightMoves()
 {
 #pragma region BlackKnights
@@ -784,10 +783,10 @@ void ChessBoard::CalculateKnightMoves()
 	}
 #pragma endregion
 }
-
 void ChessBoard::CalculateBishopMoves()
 {
 	std::vector<int> directionOffsets{ -9, -7, +9, +7 };
+	std::vector<int> directionLengths{ 0, 0, 0, 0 };
 
 #pragma region BlackBishops
 	{
@@ -795,15 +794,25 @@ void ChessBoard::CalculateBishopMoves()
 		{
 			if (m_BitBoards.blackBishops & static_cast<unsigned long long>(1) << squareIndex)
 			{ 
-				for (int directionOffset : directionOffsets)
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[1] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[2] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[3] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
-					for(int multipliedIndex{1}; multipliedIndex < 8; ++multipliedIndex)
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for(int multipliedIndex{1}; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
 					{
-						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << squareIndex + directionOffset * multipliedIndex)
+						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
 							break;
 						}
-						else if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << squareIndex + directionOffset * multipliedIndex)
+						else if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
 							Move move{};
 							move.startSquareIndex = squareIndex;
@@ -836,15 +845,25 @@ void ChessBoard::CalculateBishopMoves()
 		{
 			if (m_BitBoards.whiteBishops & static_cast<unsigned long long>(1) << squareIndex)
 			{
-				for (int directionOffset : directionOffsets)
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[1] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[2] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[3] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
-					for (int multipliedIndex{ 1 }; multipliedIndex < 8; ++multipliedIndex)
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
 					{
-						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << squareIndex + directionOffset * multipliedIndex)
+						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
 							break;
 						}
-						else if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << squareIndex + directionOffset * multipliedIndex)
+						else if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
 							Move move{};
 							move.startSquareIndex = squareIndex;
@@ -871,15 +890,12 @@ void ChessBoard::CalculateBishopMoves()
 	}
 #pragma endregion
 }
-
 void ChessBoard::CalculateRookMoves()
 {
 }
-
 void ChessBoard::CalculateQueenMoves()
 {
 }
-
 void ChessBoard::CalculateKingMoves()
 {
 }
