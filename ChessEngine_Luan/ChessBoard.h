@@ -18,14 +18,16 @@ public:
 
 
 	void MakeMove(Move move);
+	bool IsLegalMove(Move move);
+	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
 protected:
 
 	BitBoards m_BitBoards{};
+	std::vector<Move> m_PossibleMoves{};
 
 private:
 
-	std::vector<Move> m_PossibleMoves{};
 
 	bool m_WhiteToMove{ true };
 

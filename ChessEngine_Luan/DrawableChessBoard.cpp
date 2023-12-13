@@ -9,10 +9,12 @@ DrawableChessBoard::DrawableChessBoard()
 	m_TopLeftPos.y = (GAME_ENGINE->GetHeight() - m_pTexChessBoard->GetHeight()) / 2;
 }
 
-void DrawableChessBoard::Draw()
+void DrawableChessBoard::Draw(int selectedStartSquareIndex)
 {
 	DrawBoard();
 	DrawPieces();
+
+	DrawPossibleMoves(selectedStartSquareIndex);
 }
 void DrawableChessBoard::DrawBoard()
 {
@@ -65,6 +67,20 @@ void DrawableChessBoard::DrawPieceType(uint64_t bitBoard, Bitmap* bitmapGreen, B
 				GAME_ENGINE->DrawBitmap(bitmapBeige, xPos, yPos);
 
 			}
+		}
+	}
+}
+
+void DrawableChessBoard::DrawPossibleMoves(int startSquareIndex)
+{
+	for (auto& move : m_PossibleMoves)
+	{
+		if (move.startSquareIndex == startSquareIndex)
+		{
+			int x = m_TopLeftPos.x + move.targetSquareIndex % 8 * m_CellSize + m_CellSize / 2 - 15;
+			int y = m_TopLeftPos.y + move.targetSquareIndex / 8 * m_CellSize + m_CellSize / 2 - 15;
+
+			GAME_ENGINE->FillOval(x, y, 30, 30, 50);
 		}
 	}
 }

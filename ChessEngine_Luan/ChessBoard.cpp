@@ -13,14 +13,12 @@ ChessBoard::ChessBoard()
 void ChessBoard::MakeMove(Move move)
 {
 	uint64_t* startBitBoard{GetBitboardFromSquare(move.startSquareIndex)};
-	uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
 
-	if ((*startBitBoard) == 0) return;
-
+	m_WhiteToMove = !m_WhiteToMove;
 	m_EnPassantSquares = 0;
 	
 
-	UpdateColorBitboards();
+	
 	switch (move.moveType)
 	{
 		case MoveType::QuietMove:
@@ -38,125 +36,172 @@ void ChessBoard::MakeMove(Move move)
 		}
 		case MoveType::KingCastle:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
 			uint64_t* rookBitBoard{ GetBitboardFromSquare(move.targetSquareIndex + 1) };
 			*rookBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + 1);
 			*rookBitBoard |= static_cast<unsigned long long>(1) << (move.targetSquareIndex - 1);
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 			
 			break;
 		}
 		case MoveType::QueenCastle:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
 			uint64_t* rookBitBoard{ GetBitboardFromSquare(move.targetSquareIndex - 1) };
 			*rookBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex - 1);
 			*rookBitBoard |= static_cast<unsigned long long>(1) << (move.targetSquareIndex + 1);
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			break;
 		}
 		case MoveType::Capture:
 		{
+			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			break;
 		}
-		case MoveType::EnPassantCapture:
+		case MoveType::EnPassantCaptureLeft:
 		{
+			uint64_t* targetBitBoard{ GetBitboardFromSquare((move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1))) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1));
+
+
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1));
+			break;
+		}
+		case MoveType::EnPassantCaptureRight:
+		{
+			uint64_t* targetBitBoard{ GetBitboardFromSquare((move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex + 1))) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex + 1));
+
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			break;
 		}
 		case MoveType::KnightPromotion:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
-			uint64_t* knightBitBoard{(*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteKnights : &m_BitBoards.blackKnights };
+			uint64_t* knightBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteKnights : &m_BitBoards.blackKnights };
 			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 		case MoveType::BishopPromotion:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-
 			uint64_t* bishopBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteBishops : &m_BitBoards.blackBishops };
 			*bishopBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+
 			break;
 		}
 		case MoveType::RookPromotion:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-
 			uint64_t* rookBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteRooks : &m_BitBoards.blackRooks };
 			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 		case MoveType::QueenPromotion:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-
 			uint64_t* queenBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteQueens : &m_BitBoards.blackQueens };
 			*queenBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+
+			
 			break;
 		}
 		case MoveType::KnightPromotionCapture:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			uint64_t* knightBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteKnights : &m_BitBoards.blackKnights };
 			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 		case MoveType::BishopPromotionCapture:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			uint64_t* bishopBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteBishops : &m_BitBoards.blackBishops };
 			*bishopBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 		case MoveType::RookPromotionCapture:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			uint64_t* rookBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteRooks : &m_BitBoards.blackRooks };
 			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 		case MoveType::QueenPromotionCapture:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
+			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			uint64_t* queenBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteQueens : &m_BitBoards.blackQueens };
 			*queenBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-
+			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			
 			break;
 		}
 
 	}
+	UpdateColorBitboards();
+	CalculatePossibleMoves();
+}
 
+bool ChessBoard::IsLegalMove(Move _move)
+{
+	for (auto& move : m_PossibleMoves)
+	{
+		if (move == _move)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
+Move ChessBoard::GetMoveFromSquares(int startSquare, int targetSquare)
+{
+	for (auto& move : m_PossibleMoves)
+	{
+		if (move.startSquareIndex == startSquare && move.targetSquareIndex == targetSquare)
+		{
+			return move;
+		}
+	}
+
+	return Move();
 }
 
 void ChessBoard::CalculatePossibleMoves()
@@ -175,6 +220,7 @@ void ChessBoard::CalculatePossibleMoves()
 void ChessBoard::CalculatePawnMoves()
 {
 #pragma region BlackPawns
+	if(!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -218,7 +264,7 @@ void ChessBoard::CalculatePawnMoves()
 				//-----------------------------------
 				//
 				// Side left Capture (including Promotion Captures)
-				if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + 7) && squareIndex % 8 != 0 && squareIndex < 56)
+				if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + 7) && squareIndex % 8 != 0 && squareIndex < 56)
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -234,7 +280,7 @@ void ChessBoard::CalculatePawnMoves()
 				//-----------------------------------
 				//
 				// Side right Capture (including Promotion Captures)
-				if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + 9) && squareIndex % 8 != 7 && squareIndex < 56)
+				if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + 9) && squareIndex % 8 != 7 && squareIndex < 56)
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -254,7 +300,7 @@ void ChessBoard::CalculatePawnMoves()
 					Move move{};
 					move.startSquareIndex = squareIndex;
 					move.targetSquareIndex = squareIndex + 7;
-					move.moveType = MoveType::EnPassantCapture;
+					move.moveType = MoveType::EnPassantCaptureLeft;
 
 					m_PossibleMoves.push_back(move);
 				}
@@ -266,7 +312,7 @@ void ChessBoard::CalculatePawnMoves()
 					Move move{};
 					move.startSquareIndex = squareIndex;
 					move.targetSquareIndex = squareIndex + 9;
-					move.moveType = MoveType::EnPassantCapture;
+					move.moveType = MoveType::EnPassantCaptureRight;
 
 					m_PossibleMoves.push_back(move);
 				}
@@ -276,6 +322,7 @@ void ChessBoard::CalculatePawnMoves()
 #pragma endregion
 
 #pragma region WhitePawns
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -354,7 +401,7 @@ void ChessBoard::CalculatePawnMoves()
 					Move move{};
 					move.startSquareIndex = squareIndex;
 					move.targetSquareIndex = squareIndex - 9;
-					move.moveType = MoveType::EnPassantCapture;
+					move.moveType = MoveType::EnPassantCaptureLeft;
 
 					m_PossibleMoves.push_back(move);
 				}
@@ -366,7 +413,7 @@ void ChessBoard::CalculatePawnMoves()
 					Move move{};
 					move.startSquareIndex = squareIndex;
 					move.targetSquareIndex = squareIndex - 7;
-					move.moveType = MoveType::EnPassantCapture;
+					move.moveType = MoveType::EnPassantCaptureRight;
 
 					m_PossibleMoves.push_back(move);
 				}
@@ -378,6 +425,7 @@ void ChessBoard::CalculatePawnMoves()
 void ChessBoard::CalculateKnightMoves()
 {
 #pragma region BlackKnights
+	if (!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -581,6 +629,7 @@ void ChessBoard::CalculateKnightMoves()
 #pragma endregion
 
 #pragma region WhiteKnights
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -789,6 +838,7 @@ void ChessBoard::CalculateBishopMoves()
 	std::vector<int> directionLengths{ 0, 0, 0, 0 };
 
 #pragma region BlackBishops
+	if (!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -806,7 +856,7 @@ void ChessBoard::CalculateBishopMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for(int multipliedIndex{1}; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for(int multipliedIndex{1}; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -840,6 +890,7 @@ void ChessBoard::CalculateBishopMoves()
 #pragma endregion
 
 #pragma region WhiteBishops
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -857,7 +908,7 @@ void ChessBoard::CalculateBishopMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for (int multipliedIndex{ 1 }; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -896,6 +947,7 @@ void ChessBoard::CalculateRookMoves()
 	std::vector<int> directionLengths{0, 0, 0, 0};
 
 #pragma region BlackRooks
+	if (!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -913,7 +965,7 @@ void ChessBoard::CalculateRookMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for (int multipliedIndex{ 1 }; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -947,6 +999,7 @@ void ChessBoard::CalculateRookMoves()
 #pragma endregion
 
 #pragma region WhiteRooks
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -964,7 +1017,7 @@ void ChessBoard::CalculateRookMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for (int multipliedIndex{ 1 }; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -1003,6 +1056,7 @@ void ChessBoard::CalculateQueenMoves()
 	std::vector<int> directionLengths{ 0, 0, 0, 0,  0, 0, 0, 0 };
 
 #pragma region BlackQueens
+	if (!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -1024,7 +1078,7 @@ void ChessBoard::CalculateQueenMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for (int multipliedIndex{ 1 }; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -1058,6 +1112,7 @@ void ChessBoard::CalculateQueenMoves()
 #pragma endregion
 
 #pragma region WhiteQueens
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -1079,7 +1134,7 @@ void ChessBoard::CalculateQueenMoves()
 				{
 					int directionOffset{ directionOffsets[directionIndex] };
 
-					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					for (int multipliedIndex{ 1 }; multipliedIndex <= directionLengths[directionIndex]; ++multipliedIndex)
 					{
 						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
 						{
@@ -1118,6 +1173,7 @@ void ChessBoard::CalculateKingMoves()
 	std::vector<int> directionLengths{ 0, 0, 0, 0,  0, 0, 0, 0 };
 
 #pragma region BlackKing
+	if (!m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{
@@ -1172,6 +1228,7 @@ void ChessBoard::CalculateKingMoves()
 #pragma endregion
 
 #pragma region WhiteKing
+	if (m_WhiteToMove)
 	{
 		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 		{

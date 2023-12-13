@@ -59,7 +59,7 @@ void ChessEngine::Paint(RECT rect)
 	// Insert paint code 
 	GAME_ENGINE->DrawSolidBackground(RGB(20, 20, 20));
 
-	m_pDrawableChessBoard->Draw();
+	m_pDrawableChessBoard->Draw(m_CurrentSelectedSquare);
 }
 
 void ChessEngine::Tick()
@@ -84,10 +84,16 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 		else
 		{
 			int targetSquare{ GetIndexFromPosition({ x, y }) };
-			if (targetSquare != m_CurrentSelectedSquare)
+			
+			Move move{ m_pDrawableChessBoard->GetMoveFromSquares(m_CurrentSelectedSquare, targetSquare) };
+			if (m_pDrawableChessBoard->IsLegalMove(move))
 			{
-				m_pDrawableChessBoard->MakeMove({});
+				m_pDrawableChessBoard->MakeMove(move);
 				m_HasASquareSelected = false;
+			}
+			else
+			{
+				m_CurrentSelectedSquare = GetIndexFromPosition({ x, y });
 			}
 		}
 	}

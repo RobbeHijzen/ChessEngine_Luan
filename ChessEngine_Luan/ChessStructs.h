@@ -41,7 +41,8 @@ enum class MoveType
 	KingCastle,
 	QueenCastle,
 	Capture,
-	EnPassantCapture,
+	EnPassantCaptureLeft,
+	EnPassantCaptureRight,
 
 	KnightPromotion,
 	BishopPromotion,
@@ -61,6 +62,11 @@ struct Move
 	int targetSquareIndex{};
 
 	MoveType moveType{MoveType::QuietMove};
+
+	bool operator==(Move other)
+	{
+		return (startSquareIndex == other.startSquareIndex && targetSquareIndex == other.targetSquareIndex && moveType == other.moveType);
+	}
 
 };
 

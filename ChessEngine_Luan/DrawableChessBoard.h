@@ -20,7 +20,7 @@ public:
 	DrawableChessBoard& operator=(DrawableChessBoard&& other) noexcept = delete;
 
 
-	void Draw();
+	void Draw(int selectedStartSquareIndex);
 
 	Point2i GetTopLeftPos() { return m_TopLeftPos; };
 	int GetCellSize() { return m_CellSize; };
@@ -65,6 +65,7 @@ private:
 	void DrawBoard();
 	void DrawPieces();
 	void DrawPieceType(uint64_t bitBoard, Bitmap* bitmapGreen, Bitmap* bitmapBeige);
+	void DrawPossibleMoves(int startSquareIndex);
 
 	void InitializeBitmaps();
 };
