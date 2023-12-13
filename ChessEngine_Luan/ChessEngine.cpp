@@ -86,7 +86,7 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 			int targetSquare{ GetIndexFromPosition({ x, y }) };
 			if (targetSquare != m_CurrentSelectedSquare)
 			{
-				m_pDrawableChessBoard->MakeMove(m_CurrentSelectedSquare, targetSquare);
+				m_pDrawableChessBoard->MakeMove({});
 				m_HasASquareSelected = false;
 			}
 		}

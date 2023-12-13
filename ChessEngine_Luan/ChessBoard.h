@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include "HelperStructs.h"
 #include "ChessStructs.h"
 
@@ -16,7 +17,7 @@ public:
 	ChessBoard& operator=(ChessBoard&& other) noexcept = delete;
 
 
-	void MakeMove(int startSquareIndex, int targetSquareIndex);
+	void MakeMove(Move move);
 
 protected:
 
@@ -24,6 +25,7 @@ protected:
 
 private:
 
+	std::vector<Move> m_PossibleMoves{};
 
 	bool m_WhiteToMove{ true };
 
@@ -37,6 +39,19 @@ private:
 	int m_HalfMoveClock{};
 	int m_FullMoveCounter{ 1 };
 
+
+	void CalculatePossibleMoves();
+	void CalculatePawnMoves();
+	void CalculateKnightMoves();
+	void CalculateBishopMoves();
+	void CalculateRookMoves();
+	void CalculateQueenMoves();
+	void CalculateKingMoves();
+
+
+
+
+
 	void SetBitboardsFromFEN(std::string FEN);
 	void SetPositionFromChar(char c, int& squareIndex);
 	void SetSideToMoveFromChar(char c);
@@ -45,5 +60,6 @@ private:
 
 
 	uint64_t* GetBitboardFromSquare(int squareIndex);
+	void UpdateColorBitboards();
 };
 

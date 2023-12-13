@@ -3,7 +3,8 @@
 // C++ Header - ChessEngine.h - version v7_02			
 //-----------------------------------------------------------------
 
-#pragma once
+#ifndef CHESSENGINE_
+#define CHESSENGINE_
 
 //-----------------------------------------------------------------
 // Include Files
@@ -67,3 +68,5 @@ private:
 
 	int GetIndexFromPosition(Point2i position);
 };
+
+#endif

@@ -34,8 +34,33 @@ enum class FENFields
 	FullmoveCounter
 };
 
-struct Move
+enum class MoveType
 {
+	QuietMove,
+	DoublePawnPush,
+	KingCastle,
+	QueenCastle,
+	Capture,
+	EnPassantCapture,
 
+	KnightPromotion,
+	BishopPromotion,
+	RookPromotion,
+	QueenPromotion,
+
+	KnightPromotionCapture,
+	BishopPromotionCapture,
+	RookPromotionCapture,
+	QueenPromotionCapture
 
 };
+
+struct Move
+{
+	int startSquareIndex{};
+	int targetSquareIndex{};
+
+	MoveType moveType{MoveType::QuietMove};
+
+};
+

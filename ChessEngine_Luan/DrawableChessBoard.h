@@ -32,23 +32,39 @@ private:
 
 	std::unique_ptr<Bitmap> m_pTexChessBoard;
 
-	std::unique_ptr<Bitmap> m_pTexWhitePawn;
-	std::unique_ptr<Bitmap> m_pTexWhiteKnight;
-	std::unique_ptr<Bitmap> m_pTexWhiteBishop;
-	std::unique_ptr<Bitmap> m_pTexWhiteRook;
-	std::unique_ptr<Bitmap> m_pTexWhiteQueen;
-	std::unique_ptr<Bitmap> m_pTexWhiteKing;
+	std::unique_ptr<Bitmap> m_pTexWhitePawn_Green;
+	std::unique_ptr<Bitmap> m_pTexWhiteKnight_Green;
+	std::unique_ptr<Bitmap> m_pTexWhiteBishop_Green;
+	std::unique_ptr<Bitmap> m_pTexWhiteRook_Green;
+	std::unique_ptr<Bitmap> m_pTexWhiteQueen_Green;
+	std::unique_ptr<Bitmap> m_pTexWhiteKing_Green;
 
-	std::unique_ptr<Bitmap> m_pTexBlackPawn;
-	std::unique_ptr<Bitmap> m_pTexBlackKnight;
-	std::unique_ptr<Bitmap> m_pTexBlackBishop;
-	std::unique_ptr<Bitmap> m_pTexBlackRook;
-	std::unique_ptr<Bitmap> m_pTexBlackQueen;
-	std::unique_ptr<Bitmap> m_pTexBlackKing;
+	std::unique_ptr<Bitmap> m_pTexWhitePawn_Beige;
+	std::unique_ptr<Bitmap> m_pTexWhiteKnight_Beige;
+	std::unique_ptr<Bitmap> m_pTexWhiteBishop_Beige;
+	std::unique_ptr<Bitmap> m_pTexWhiteRook_Beige;
+	std::unique_ptr<Bitmap> m_pTexWhiteQueen_Beige;
+	std::unique_ptr<Bitmap> m_pTexWhiteKing_Beige;
+
+
+	std::unique_ptr<Bitmap> m_pTexBlackPawn_Green;
+	std::unique_ptr<Bitmap> m_pTexBlackKnight_Green;
+	std::unique_ptr<Bitmap> m_pTexBlackBishop_Green;
+	std::unique_ptr<Bitmap> m_pTexBlackRook_Green;
+	std::unique_ptr<Bitmap> m_pTexBlackQueen_Green;
+	std::unique_ptr<Bitmap> m_pTexBlackKing_Green;
+
+	std::unique_ptr<Bitmap> m_pTexBlackPawn_Beige;
+	std::unique_ptr<Bitmap> m_pTexBlackKnight_Beige;
+	std::unique_ptr<Bitmap> m_pTexBlackBishop_Beige;
+	std::unique_ptr<Bitmap> m_pTexBlackRook_Beige;
+	std::unique_ptr<Bitmap> m_pTexBlackQueen_Beige;
+	std::unique_ptr<Bitmap> m_pTexBlackKing_Beige;
+
 
 	void DrawBoard();
 	void DrawPieces();
-	void DrawPieceType(uint64_t bitBoard, Bitmap* bitmap);
+	void DrawPieceType(uint64_t bitBoard, Bitmap* bitmapGreen, Bitmap* bitmapBeige);
 
 	void InitializeBitmaps();
 };
