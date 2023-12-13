@@ -1,4 +1,5 @@
 #include "ChessBoard.h"
+#include "GameEngine.h"
 #include <string>
 
 ChessBoard::ChessBoard()
@@ -10,7 +11,7 @@ ChessBoard::ChessBoard()
 	CalculatePossibleMoves();
 }
 
-void ChessBoard::MakeMove(Move move)
+void ChessBoard::MakeMove(Move move, bool originalBoard)
 {
 	uint64_t* startBitBoard{GetBitboardFromSquare(move.startSquareIndex)};
 
@@ -177,6 +178,12 @@ void ChessBoard::MakeMove(Move move)
 	}
 	UpdateColorBitboards();
 	CalculatePossibleMoves();
+	if (originalBoard)
+	{
+		CheckForIllegalMoves();
+		CheckForCheckmate();
+	}
+
 }
 
 bool ChessBoard::IsLegalMove(Move _move)
@@ -234,7 +241,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex + 8;
 					move.moveType = MoveType::QuietMove;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 
 
 
@@ -246,7 +253,7 @@ void ChessBoard::CalculatePawnMoves()
 						move.targetSquareIndex = squareIndex + 16;
 						move.moveType = MoveType::DoublePawnPush;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//-----------------------------------
@@ -259,7 +266,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex + 8;
 					move.moveType = MoveType::QueenPromotion;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -275,7 +282,7 @@ void ChessBoard::CalculatePawnMoves()
 						move.moveType = MoveType::Capture;
 					
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -290,7 +297,7 @@ void ChessBoard::CalculatePawnMoves()
 					else
 						move.moveType = MoveType::Capture;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -302,7 +309,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex + 7;
 					move.moveType = MoveType::EnPassantCaptureLeft;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -314,7 +321,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex + 9;
 					move.moveType = MoveType::EnPassantCaptureRight;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 			}
 		}
@@ -336,7 +343,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex - 8;
 					move.moveType = MoveType::QuietMove;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 
 
 
@@ -348,7 +355,7 @@ void ChessBoard::CalculatePawnMoves()
 						move.targetSquareIndex = squareIndex - 16;
 						move.moveType = MoveType::DoublePawnPush;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//-----------------------------------
@@ -361,7 +368,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex - 8;
 					move.moveType = MoveType::QueenPromotion;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -376,7 +383,7 @@ void ChessBoard::CalculatePawnMoves()
 					else
 						move.moveType = MoveType::Capture;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -391,7 +398,7 @@ void ChessBoard::CalculatePawnMoves()
 					else
 						move.moveType = MoveType::Capture;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -403,7 +410,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex - 9;
 					move.moveType = MoveType::EnPassantCaptureLeft;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 				//-----------------------------------
 				//
@@ -415,7 +422,7 @@ void ChessBoard::CalculatePawnMoves()
 					move.targetSquareIndex = squareIndex - 7;
 					move.moveType = MoveType::EnPassantCaptureRight;
 
-					m_PossibleMoves.push_back(move);
+					m_PossibleMoves.emplace_back(move);
 				}
 			}
 		}
@@ -443,7 +450,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -452,7 +459,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//North-North-West
@@ -467,7 +474,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -476,7 +483,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//North-North-East
@@ -491,7 +498,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -500,7 +507,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//East-North-East
@@ -515,7 +522,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -524,7 +531,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//East-South-East
@@ -539,7 +546,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -548,7 +555,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//South-South-East
@@ -563,7 +570,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -572,7 +579,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//South-South-West
@@ -587,7 +594,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -596,7 +603,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//West-South-West
@@ -611,7 +618,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -620,7 +627,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 			}
@@ -647,7 +654,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -656,7 +663,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//North-North-West
@@ -671,7 +678,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -680,7 +687,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//North-North-East
@@ -695,7 +702,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -704,7 +711,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//East-North-East
@@ -719,7 +726,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -728,7 +735,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//East-South-East
@@ -743,7 +750,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -752,7 +759,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//South-South-East
@@ -767,7 +774,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -776,7 +783,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//South-South-West
@@ -791,7 +798,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -800,7 +807,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 				//West-South-West
@@ -815,7 +822,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
@@ -824,7 +831,7 @@ void ChessBoard::CalculateKnightMoves()
 						move.targetSquareIndex = newSquareIndex;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 					}
 				}
 			}
@@ -847,10 +854,10 @@ void ChessBoard::CalculateBishopMoves()
 				int distanceFromLeft = squareIndex % 8;
 				int distanceFromUp = squareIndex / 8;
 
-				directionLengths[0] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[1] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[2] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[3] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[0] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[1] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[2] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[3] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -869,7 +876,7 @@ void ChessBoard::CalculateBishopMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -879,7 +886,7 @@ void ChessBoard::CalculateBishopMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -899,10 +906,10 @@ void ChessBoard::CalculateBishopMoves()
 				int distanceFromLeft = squareIndex % 8;
 				int distanceFromUp = squareIndex / 8;
 
-				directionLengths[0] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[1] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[2] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[3] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[0] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[1] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[2] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[3] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -921,7 +928,7 @@ void ChessBoard::CalculateBishopMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -931,7 +938,7 @@ void ChessBoard::CalculateBishopMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -978,7 +985,7 @@ void ChessBoard::CalculateRookMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -988,7 +995,7 @@ void ChessBoard::CalculateRookMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -1030,7 +1037,7 @@ void ChessBoard::CalculateRookMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -1040,7 +1047,7 @@ void ChessBoard::CalculateRookMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -1069,10 +1076,10 @@ void ChessBoard::CalculateQueenMoves()
 				directionLengths[1] = distanceFromUp;
 				directionLengths[2] = 7 - distanceFromLeft;
 				directionLengths[3] = 7 - distanceFromUp;
-				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[4] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -1091,7 +1098,7 @@ void ChessBoard::CalculateQueenMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -1101,7 +1108,7 @@ void ChessBoard::CalculateQueenMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -1125,10 +1132,10 @@ void ChessBoard::CalculateQueenMoves()
 				directionLengths[1] = distanceFromUp;
 				directionLengths[2] = 7 - distanceFromLeft;
 				directionLengths[3] = 7 - distanceFromUp;
-				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[4] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -1147,7 +1154,7 @@ void ChessBoard::CalculateQueenMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::Capture;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							break;
 						}
 						else
@@ -1157,7 +1164,7 @@ void ChessBoard::CalculateQueenMoves()
 							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
 							move.moveType = MoveType::QuietMove;
 
-							m_PossibleMoves.push_back(move);
+							m_PossibleMoves.emplace_back(move);
 							continue;
 						}
 					}
@@ -1186,10 +1193,10 @@ void ChessBoard::CalculateKingMoves()
 				directionLengths[1] = distanceFromUp;
 				directionLengths[2] = 7 - distanceFromLeft;
 				directionLengths[3] = 7 - distanceFromUp;
-				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[4] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -1207,7 +1214,7 @@ void ChessBoard::CalculateKingMoves()
 						move.targetSquareIndex = squareIndex + directionOffset;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 						continue;
 					}
 					else
@@ -1217,7 +1224,7 @@ void ChessBoard::CalculateKingMoves()
 						move.targetSquareIndex = squareIndex + directionOffset;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 						continue;
 					}
 					
@@ -1241,10 +1248,10 @@ void ChessBoard::CalculateKingMoves()
 				directionLengths[1] = distanceFromUp;
 				directionLengths[2] = 7 - distanceFromLeft;
 				directionLengths[3] = 7 - distanceFromUp;
-				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
-				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
-				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
-				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[4] = min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = min(distanceFromLeft, 7 - distanceFromUp);
 
 				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
 				{
@@ -1262,7 +1269,7 @@ void ChessBoard::CalculateKingMoves()
 						move.targetSquareIndex = squareIndex + directionOffset;
 						move.moveType = MoveType::Capture;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 						continue;
 					}
 					else
@@ -1272,7 +1279,7 @@ void ChessBoard::CalculateKingMoves()
 						move.targetSquareIndex = squareIndex + directionOffset;
 						move.moveType = MoveType::QuietMove;
 
-						m_PossibleMoves.push_back(move);
+						m_PossibleMoves.emplace_back(move);
 						continue;
 					}
 
@@ -1491,5 +1498,57 @@ void ChessBoard::UpdateColorBitboards()
 {
 	m_BitBoards.blackPieces = m_BitBoards.blackPawns | m_BitBoards.blackKnights | m_BitBoards.blackBishops | m_BitBoards.blackRooks | m_BitBoards.blackQueens | m_BitBoards.blackKing;
 	m_BitBoards.whitePieces = m_BitBoards.whitePawns | m_BitBoards.whiteKnights | m_BitBoards.whiteBishops | m_BitBoards.whiteRooks | m_BitBoards.whiteQueens | m_BitBoards.whiteKing;
+}
+
+void ChessBoard::CheckForIllegalMoves()
+{
+	std::vector<std::list<Move>::iterator> illegalIterators{};
+	for (auto it{m_PossibleMoves.begin()}; it != m_PossibleMoves.end(); ++it)
+	{
+		ChessBoard simulatedChessBoard{ *this };
+		simulatedChessBoard.MakeMove(*it, false);
+
+		if (simulatedChessBoard.IsKingInCheck())
+		{
+			illegalIterators.emplace_back(it);
+		}
+	}
+
+	for (auto& it : illegalIterators)
+	{
+		m_PossibleMoves.erase(it);
+	}
+}
+
+bool ChessBoard::IsKingInCheck()
+{
+	uint64_t kingBitBoard{m_WhiteToMove ? m_BitBoards.blackKing : m_BitBoards.whiteKing };
+
+	int kingSquareIndex{};
+	for (int index{}; index < 64; ++index)
+	{
+		if (kingBitBoard & static_cast<unsigned long long>(1) << index)
+		{
+			kingSquareIndex = index;
+			break;
+		}
+	}
+
+	for (auto& move : m_PossibleMoves)
+	{
+		if (move.targetSquareIndex == kingSquareIndex)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void ChessBoard::CheckForCheckmate()
+{
+	if (m_PossibleMoves.size() == 0)
+	{
+		GAME_ENGINE->Quit();
+	}
 }
 

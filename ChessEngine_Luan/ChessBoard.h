@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include "HelperStructs.h"
 #include "ChessStructs.h"
 
@@ -11,20 +12,23 @@ public:
 	ChessBoard();
 
 	~ChessBoard() = default;
-	ChessBoard(const ChessBoard& other) = delete;
-	ChessBoard(ChessBoard&& other) noexcept = delete;
-	ChessBoard& operator=(const ChessBoard& other) = delete;
-	ChessBoard& operator=(ChessBoard&& other) noexcept = delete;
+	ChessBoard(const ChessBoard& other) = default;
+	ChessBoard(ChessBoard&& other) noexcept = default;
+	ChessBoard& operator=(const ChessBoard& other) = default;
+	ChessBoard& operator=(ChessBoard&& other) noexcept = default;
 
 
-	void MakeMove(Move move);
+	void MakeMove(Move move, bool originalBoard = true);
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
+
+	std::list<Move> GetPossibleMoves() { return m_PossibleMoves; }
+
 
 protected:
 
 	BitBoards m_BitBoards{};
-	std::vector<Move> m_PossibleMoves{};
+	std::list<Move> m_PossibleMoves{};
 
 private:
 
@@ -63,5 +67,10 @@ private:
 
 	uint64_t* GetBitboardFromSquare(int squareIndex);
 	void UpdateColorBitboards();
+
+	void CheckForIllegalMoves();
+	bool IsKingInCheck();
+	void CheckForCheckmate();
+
 };
 
