@@ -892,12 +892,338 @@ void ChessBoard::CalculateBishopMoves()
 }
 void ChessBoard::CalculateRookMoves()
 {
+	std::vector<int> directionOffsets{-1, -8, +1, +8};
+	std::vector<int> directionLengths{0, 0, 0, 0};
+
+#pragma region BlackRooks
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.blackRooks & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					{
+						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							break;
+						}
+						else if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::Capture;
+
+							m_PossibleMoves.push_back(move);
+							break;
+						}
+						else
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::QuietMove;
+
+							m_PossibleMoves.push_back(move);
+							continue;
+						}
+					}
+				}
+			}
+		}
+	}
+#pragma endregion
+
+#pragma region WhiteRooks
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.whiteRooks & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					{
+						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							break;
+						}
+						else if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::Capture;
+
+							m_PossibleMoves.push_back(move);
+							break;
+						}
+						else
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::QuietMove;
+
+							m_PossibleMoves.push_back(move);
+							continue;
+						}
+					}
+				}
+			}
+		}
+	}
+#pragma endregion
 }
 void ChessBoard::CalculateQueenMoves()
 {
+	std::vector<int> directionOffsets{ -1, -8, +1, +8,  -9, -7, +9, +7 };
+	std::vector<int> directionLengths{ 0, 0, 0, 0,  0, 0, 0, 0 };
+
+#pragma region BlackQueens
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.blackQueens & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					{
+						if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							break;
+						}
+						else if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::Capture;
+
+							m_PossibleMoves.push_back(move);
+							break;
+						}
+						else
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::QuietMove;
+
+							m_PossibleMoves.push_back(move);
+							continue;
+						}
+					}
+				}
+			}
+		}
+	}
+#pragma endregion
+
+#pragma region WhiteQueens
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.whiteQueens & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					for (int multipliedIndex{ 1 }; multipliedIndex < directionLengths[directionIndex]; ++multipliedIndex)
+					{
+						if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							break;
+						}
+						else if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset * multipliedIndex))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::Capture;
+
+							m_PossibleMoves.push_back(move);
+							break;
+						}
+						else
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + directionOffset * multipliedIndex;
+							move.moveType = MoveType::QuietMove;
+
+							m_PossibleMoves.push_back(move);
+							continue;
+						}
+					}
+				}
+			}
+		}
+	}
+#pragma endregion
 }
 void ChessBoard::CalculateKingMoves()
 {
+	std::vector<int> directionOffsets{ -1, -8, +1, +8,  -9, -7, +9, +7 };
+	std::vector<int> directionLengths{ 0, 0, 0, 0,  0, 0, 0, 0 };
+
+#pragma region BlackKing
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.blackKing & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					if (directionLengths[directionIndex] == 0) continue;
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+					{
+						continue;
+					}
+					else if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + directionOffset;
+						move.moveType = MoveType::Capture;
+
+						m_PossibleMoves.push_back(move);
+						continue;
+					}
+					else
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + directionOffset;
+						move.moveType = MoveType::QuietMove;
+
+						m_PossibleMoves.push_back(move);
+						continue;
+					}
+					
+				}
+			}
+		}
+	}
+#pragma endregion
+
+#pragma region WhiteKing
+	{
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			if (m_BitBoards.whiteKing & static_cast<unsigned long long>(1) << squareIndex)
+			{
+				int distanceFromLeft = squareIndex % 8;
+				int distanceFromUp = squareIndex / 8;
+
+				directionLengths[0] = distanceFromLeft;
+				directionLengths[1] = distanceFromUp;
+				directionLengths[2] = 7 - distanceFromLeft;
+				directionLengths[3] = 7 - distanceFromUp;
+				directionLengths[4] = std::min(distanceFromLeft, distanceFromUp);
+				directionLengths[5] = std::min(7 - distanceFromLeft, distanceFromUp);
+				directionLengths[6] = std::min(7 - distanceFromLeft, 7 - distanceFromUp);
+				directionLengths[7] = std::min(distanceFromLeft, 7 - distanceFromUp);
+
+				for (int directionIndex{}; directionIndex < directionOffsets.size(); ++directionIndex)
+				{
+					if (directionLengths[directionIndex] == 0) continue;
+					int directionOffset{ directionOffsets[directionIndex] };
+
+					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+					{
+						continue;
+					}
+					else if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + directionOffset;
+						move.moveType = MoveType::Capture;
+
+						m_PossibleMoves.push_back(move);
+						continue;
+					}
+					else
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + directionOffset;
+						move.moveType = MoveType::QuietMove;
+
+						m_PossibleMoves.push_back(move);
+						continue;
+					}
+
+				}
+			}
+		}
+	}
+#pragma endregion
 }
 
 void ChessBoard::SetBitboardsFromFEN(std::string FEN)
