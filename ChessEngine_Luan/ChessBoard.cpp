@@ -6,6 +6,7 @@ ChessBoard::ChessBoard()
 {
 	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
 	SetBitboardsFromFEN(FEN);
+	m_BitBoardsHistory.emplace_back(m_BitBoards);
 
 	UpdateColorBitboards();
 	CalculatePossibleMoves();
@@ -13,11 +14,14 @@ ChessBoard::ChessBoard()
 
 void ChessBoard::MakeMove(Move move, bool originalBoard)
 {
-	uint64_t* startBitBoard{GetBitboardFromSquare(move.startSquareIndex)};
+	if (m_GameState != GameState::InProgress) return;
 
-	m_WhiteToMove = !m_WhiteToMove;
 	m_EnPassantSquares = 0;
-	
+
+	if(!m_WhiteToMove) ++m_HalfMoveClock;
+	++m_FullMoveCounter;
+
+	uint64_t* startBitBoard{GetBitboardFromSquare(move.startSquareIndex)};
 
 	
 	switch (move.moveType)
@@ -26,6 +30,9 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 		{
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+
+			if (*startBitBoard == m_BitBoards.whitePawns || *startBitBoard == m_BitBoards.blackPawns) m_HalfMoveClock = 0;
+
 			break;
 		}
 		case MoveType::DoublePawnPush:
@@ -33,6 +40,8 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 			m_EnPassantSquares |= static_cast<unsigned long long>(1) << (move.startSquareIndex + ((move.targetSquareIndex - move.startSquareIndex) / 2));
+			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::KingCastle:
@@ -65,6 +74,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::EnPassantCaptureLeft:
@@ -76,6 +86,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::EnPassantCaptureRight:
@@ -87,6 +98,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::KnightPromotion:
@@ -96,6 +108,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::BishopPromotion:
@@ -105,6 +118,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::RookPromotion:
@@ -114,6 +128,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::QueenPromotion:
@@ -123,7 +138,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 
-			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::KnightPromotionCapture:
@@ -136,6 +151,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::BishopPromotionCapture:
@@ -148,6 +164,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::RookPromotionCapture:
@@ -160,6 +177,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 		case MoveType::QueenPromotionCapture:
@@ -172,18 +190,23 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			
+			m_HalfMoveClock = 0;
 			break;
 		}
 
 	}
 	UpdateColorBitboards();
+
+	m_BitBoardsHistory.emplace_back(m_BitBoards);
+	m_WhiteToMove = !m_WhiteToMove;
+
+	
 	CalculatePossibleMoves();
 	if (originalBoard)
 	{
 		CheckForIllegalMoves();
-		CheckForCheckmate();
 	}
-
+	CheckForGameEnd();
 }
 
 bool ChessBoard::IsLegalMove(Move _move)
@@ -1508,7 +1531,7 @@ void ChessBoard::CheckForIllegalMoves()
 		ChessBoard simulatedChessBoard{ *this };
 		simulatedChessBoard.MakeMove(*it, false);
 
-		if (simulatedChessBoard.IsKingInCheck())
+		if (simulatedChessBoard.IsOtherKingInCheck())
 		{
 			illegalIterators.emplace_back(it);
 		}
@@ -1520,7 +1543,7 @@ void ChessBoard::CheckForIllegalMoves()
 	}
 }
 
-bool ChessBoard::IsKingInCheck()
+bool ChessBoard::IsOtherKingInCheck()
 {
 	uint64_t kingBitBoard{m_WhiteToMove ? m_BitBoards.blackKing : m_BitBoards.whiteKing };
 
@@ -1544,11 +1567,143 @@ bool ChessBoard::IsKingInCheck()
 	return false;
 }
 
+void ChessBoard::CheckForGameEnd()
+{
+	CheckForCheckmate();
+	CheckForFiftyMoveRule();
+	CheckForInsufficientMaterial();
+	CheckForRepetition();
+}
+
 void ChessBoard::CheckForCheckmate()
 {
 	if (m_PossibleMoves.size() == 0)
 	{
-		GAME_ENGINE->Quit();
+		ChessBoard copiedChessBoard{ *this };
+		copiedChessBoard.m_WhiteToMove = !copiedChessBoard.m_WhiteToMove;
+		copiedChessBoard.CalculatePossibleMoves();
+
+		if (copiedChessBoard.IsOtherKingInCheck())
+		{
+			if (m_WhiteToMove)
+				m_GameState = GameState::BlackWon;
+			else
+				m_GameState = GameState::WhiteWon;
+		}
+		else
+		{
+			m_GameState = GameState::Draw;
+		}
+		m_FirstFrameGameEnd = true;
 	}
+}
+
+void ChessBoard::CheckForFiftyMoveRule()
+{
+	if (m_HalfMoveClock >= 50)
+	{
+		m_GameState = GameState::Draw;
+
+		m_FirstFrameGameEnd = true;
+	}
+
+}
+
+void ChessBoard::CheckForInsufficientMaterial()
+{
+	bool insufficientMaterial{ false };
+
+	int amountOfWhitePawns{ GetAmountOfPiecesFromBitBoard(m_BitBoards.whitePawns)};
+	int amountOfWhiteKnights{ GetAmountOfPiecesFromBitBoard(m_BitBoards.whiteKnights)};
+	int amountOfWhiteBishops{ GetAmountOfPiecesFromBitBoard(m_BitBoards.whiteBishops)};
+	int amountOfWhiteRooks{ GetAmountOfPiecesFromBitBoard(m_BitBoards.whiteRooks)};
+	int amountOfWhiteQueens{ GetAmountOfPiecesFromBitBoard(m_BitBoards.whiteQueens)};
+
+	int amountOfBlackPawns{ GetAmountOfPiecesFromBitBoard(m_BitBoards.blackPawns)};
+	int amountOfBlackKnights{ GetAmountOfPiecesFromBitBoard(m_BitBoards.blackKnights)};
+	int amountOfBlackBishops{ GetAmountOfPiecesFromBitBoard(m_BitBoards.blackBishops)};
+	int amountOfBlackRooks{ GetAmountOfPiecesFromBitBoard(m_BitBoards.blackRooks)};
+	int amountOfBlackQueens{ GetAmountOfPiecesFromBitBoard(m_BitBoards.blackQueens)};
+
+	// King vs King
+	if (amountOfWhitePawns + amountOfWhiteKnights + amountOfWhiteBishops + amountOfWhiteRooks + amountOfWhiteQueens +
+		amountOfBlackPawns + amountOfBlackKnights + amountOfBlackBishops + amountOfBlackRooks + amountOfBlackQueens == 0)
+	{
+		insufficientMaterial = true;
+	}
+
+	// King + minor piece vs King (White)
+	else if (amountOfWhitePawns + amountOfWhiteRooks + amountOfWhiteQueens +
+		amountOfBlackPawns + amountOfBlackKnights + amountOfBlackBishops + amountOfBlackRooks + amountOfBlackQueens == 0
+		&& amountOfWhiteBishops + amountOfWhiteKnights == 1)
+	{
+		insufficientMaterial = true;
+	}
+	// King + minor piece vs King (Black)
+	else if (amountOfBlackPawns + amountOfBlackRooks + amountOfBlackQueens +
+		amountOfWhitePawns + amountOfWhiteKnights + amountOfWhiteBishops + amountOfWhiteRooks + amountOfWhiteQueens == 0
+		&& amountOfBlackBishops + amountOfBlackKnights == 1)
+	{
+		insufficientMaterial = true;
+	}
+
+	// King + 2 knights vs King (White)
+	else if (amountOfWhitePawns + amountOfWhiteRooks + amountOfWhiteQueens + amountOfWhiteBishops +
+		amountOfBlackPawns + amountOfBlackKnights + amountOfBlackBishops + amountOfBlackRooks + amountOfBlackQueens == 0
+		&&  amountOfWhiteKnights == 2)
+	{
+		insufficientMaterial = true;
+	}
+	// King + 2 knights vs King (Black)
+	else if (amountOfBlackPawns + amountOfBlackRooks + amountOfBlackQueens + amountOfBlackBishops +
+		amountOfWhitePawns + amountOfWhiteKnights + amountOfWhiteBishops + amountOfWhiteRooks + amountOfWhiteQueens == 0
+		&& amountOfBlackKnights == 2)
+	{
+		insufficientMaterial = true;
+	}
+
+	// King + minor piece vs King + minor piece
+	else if (amountOfWhitePawns + amountOfWhiteRooks + amountOfWhiteQueens +
+		amountOfBlackPawns + amountOfBlackRooks + amountOfBlackQueens == 0
+		&& amountOfWhiteKnights + amountOfWhiteBishops == 1
+		&& amountOfBlackKnights + amountOfBlackBishops == 1)
+	{
+		insufficientMaterial = true;
+	}
+
+	if (insufficientMaterial)
+	{
+		m_GameState = GameState::Draw;
+		m_FirstFrameGameEnd = true;
+	}
+}
+
+int ChessBoard::GetAmountOfPiecesFromBitBoard(uint64_t bitBoard)
+{
+	int amount{};
+	for (int index{}; index < 64; ++index)
+	{
+		if (bitBoard & static_cast<unsigned long long>(1) << index) ++amount;
+	}
+	return amount;
+}
+
+void ChessBoard::CheckForRepetition()
+{
+	int amountOfCurrentApearences{0};
+	for (auto& bitBoard : m_BitBoardsHistory)
+	{
+		if (bitBoard == m_BitBoards)
+		{
+			++amountOfCurrentApearences;
+		}
+	}
+
+	if (amountOfCurrentApearences >= 3)
+	{
+		m_GameState = GameState::Draw;
+		m_FirstFrameGameEnd = true;
+	}
+
 }
 

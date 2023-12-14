@@ -64,7 +64,36 @@ void ChessEngine::Paint(RECT rect)
 
 void ChessEngine::Tick()
 {
-	// Insert non-paint code that needs to be executed each tick 
+	if (m_pDrawableChessBoard->GetFirstFrameGameEnd())
+	{
+		switch (m_pDrawableChessBoard->GetGameState())
+		{
+			case GameState::Draw:
+			{
+				tstring s{ L"The game has Drawn" };
+				GAME_ENGINE->MessageBox(s);
+
+				break;
+			}
+			case GameState::WhiteWon:
+			{
+				tstring s{ L"White Has Won!" };
+				GAME_ENGINE->MessageBox(s);
+
+				break;
+			}
+			case GameState::BlackWon:
+			{
+				tstring s{ L"Black Has Won!" };
+				GAME_ENGINE->MessageBox(s);
+
+				break;
+			}
+			default:
+				break;
+		}
+		m_pDrawableChessBoard->SetFirstFrameGameEnd(false);
+	}
 }
 
 void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPARAM wParam)

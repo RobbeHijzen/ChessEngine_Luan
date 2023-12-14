@@ -22,6 +22,10 @@ public:
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
+	GameState GetGameState() { return m_GameState; }
+	bool GetFirstFrameGameEnd() { return m_FirstFrameGameEnd; }
+	void SetFirstFrameGameEnd(bool isFirstFrameGameEnd) { m_FirstFrameGameEnd = isFirstFrameGameEnd; }
+
 	std::list<Move> GetPossibleMoves() { return m_PossibleMoves; }
 
 
@@ -32,6 +36,10 @@ protected:
 
 private:
 
+	std::vector<BitBoards> m_BitBoardsHistory{};
+
+	GameState m_GameState{GameState::InProgress};
+	bool m_FirstFrameGameEnd{ false };
 
 	bool m_WhiteToMove{ true };
 
@@ -69,8 +77,13 @@ private:
 	void UpdateColorBitboards();
 
 	void CheckForIllegalMoves();
-	bool IsKingInCheck();
-	void CheckForCheckmate();
+	bool IsOtherKingInCheck();
 
+	void CheckForGameEnd();
+	void CheckForCheckmate();
+	void CheckForFiftyMoveRule();
+	void CheckForInsufficientMaterial();
+	int GetAmountOfPiecesFromBitBoard(uint64_t bitBoard);
+	void CheckForRepetition();
 };
 

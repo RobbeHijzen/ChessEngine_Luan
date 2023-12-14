@@ -22,6 +22,22 @@ struct BitBoards
 	uint64_t blackPieces{};
 
 	uint64_t nullBitBoard{0};
+
+	bool operator==(BitBoards other)
+	{
+		return whitePawns == other.whitePawns &&
+			   whiteKnights == other.whiteKnights &&
+			   whiteBishops == other.whiteBishops &&
+			   whiteRooks == other.whiteRooks &&
+			   whiteQueens == other.whiteQueens &&
+			   whiteKing == other.whiteKing &&
+			   blackPawns == other.blackPawns &&
+			   blackKnights == other.blackKnights &&
+			   blackBishops == other.blackBishops &&
+			   blackRooks == other.blackRooks &&
+			   blackQueens == other.blackQueens &&
+			   blackKing == other.blackKing;
+	}
 };
 
 enum class FENFields
@@ -68,5 +84,13 @@ struct Move
 		return (startSquareIndex == other.startSquareIndex && targetSquareIndex == other.targetSquareIndex && moveType == other.moveType);
 	}
 
+};
+
+enum class GameState
+{
+	InProgress,
+	Draw,
+	WhiteWon,
+	BlackWon
 };
 
