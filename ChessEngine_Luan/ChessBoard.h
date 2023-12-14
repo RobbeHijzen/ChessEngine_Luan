@@ -19,6 +19,7 @@ public:
 
 
 	void MakeMove(Move move, bool originalBoard = true);
+	void UnMakeMove(Move move);
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
@@ -48,11 +49,20 @@ private:
 	bool m_BlackCanCastleQueenSide{ false };
 	bool m_BlackCanCastleKingSide{ false };
 
+	bool m_WhiteKingSideRookHasMoved{false};
+	bool m_WhiteQueenSideRookHasMoved{false};
+	bool m_BlackKingSideRookHasMoved{false};
+	bool m_BlackQueenSideRookHasMoved{false};
+
+
+
 	uint64_t m_EnPassantSquares{};
 
 	int m_HalfMoveClock{};
 	int m_FullMoveCounter{ 1 };
 
+
+	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
 	void CalculatePossibleMoves();
 	void CalculatePawnMoves();
