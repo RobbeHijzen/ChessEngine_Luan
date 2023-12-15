@@ -18,17 +18,24 @@ public:
 	ChessBoard& operator=(ChessBoard&& other) noexcept = default;
 
 
-	void MakeMove(Move move, bool originalBoard = true);
-	void UnMakeMove(Move move);
+	int MoveGenerationTest(int depth);
+
+	
+	void MakeMove(Move move, bool originalBoard = true, bool canEndGame = true);
+	void UnMakeLastMove();
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
-	GameState GetGameState() { return m_GameState; }
+	GameProgress GetGameProgress() { return m_GameProgress; }
 	bool GetFirstFrameGameEnd() { return m_FirstFrameGameEnd; }
 	void SetFirstFrameGameEnd(bool isFirstFrameGameEnd) { m_FirstFrameGameEnd = isFirstFrameGameEnd; }
 
 	std::list<Move> GetPossibleMoves() { return m_PossibleMoves; }
 
+	int GetCaptureAmount() { return m_CaptureAmount; }
+	int GetEnPassantAmount() { return m_EnPassantAmount; }
+	int GetCastleAmount() { return m_CastleAmount; }
+	int GetPromotionAmount() { return m_PromotionAmount; }
 
 protected:
 
@@ -37,9 +44,14 @@ protected:
 
 private:
 
-	std::vector<BitBoards> m_BitBoardsHistory{};
+	int m_CaptureAmount{};
+	int m_EnPassantAmount{};
+	int m_CastleAmount{};
+	int m_PromotionAmount{};
 
-	GameState m_GameState{GameState::InProgress};
+	std::vector<GameState> m_GameStateHistory{};
+
+	GameProgress m_GameProgress{GameProgress::InProgress};
 	bool m_FirstFrameGameEnd{ false };
 
 	bool m_WhiteToMove{ true };
@@ -49,12 +61,6 @@ private:
 	bool m_BlackCanCastleQueenSide{ false };
 	bool m_BlackCanCastleKingSide{ false };
 
-	bool m_WhiteKingSideRookHasMoved{false};
-	bool m_WhiteQueenSideRookHasMoved{false};
-	bool m_BlackKingSideRookHasMoved{false};
-	bool m_BlackQueenSideRookHasMoved{false};
-
-
 
 	uint64_t m_EnPassantSquares{};
 
@@ -62,17 +68,21 @@ private:
 	int m_FullMoveCounter{ 1 };
 
 
+	const KnightOffsets m_KnightOffsets{};
+
+	void UpdateBitBoards(Move move, uint64_t* startBitBoard);
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
-	void CalculatePossibleMoves();
+	void CalculatePossibleMoves(bool originalBoard);
 	void CalculatePawnMoves();
 	void CalculateKnightMoves();
 	void CalculateBishopMoves();
 	void CalculateRookMoves();
 	void CalculateQueenMoves();
-	void CalculateKingMoves();
+	void CalculateSlidingMoves();
+	void CalculateKingMoves(bool originalBoard = true);
 
-
+	void CheckForIllegalMoves();
 
 
 
@@ -86,8 +96,9 @@ private:
 	uint64_t* GetBitboardFromSquare(int squareIndex);
 	void UpdateColorBitboards();
 
-	void CheckForIllegalMoves();
+	
 	bool IsOtherKingInCheck();
+	bool IsSquareInCheckByOtherColor(int squareIndex);
 
 	void CheckForGameEnd();
 	void CheckForCheckmate();
@@ -95,5 +106,7 @@ private:
 	void CheckForInsufficientMaterial();
 	int GetAmountOfPiecesFromBitBoard(uint64_t bitBoard);
 	void CheckForRepetition();
+
+	void UpdateGameStateHistory();
 };
 

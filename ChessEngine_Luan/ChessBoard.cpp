@@ -4,26 +4,105 @@
 
 ChessBoard::ChessBoard()
 {
-	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	//std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	//std::string FEN{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq 0 0" }; // Position 2
+	//std::string FEN{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - 0 0" }; // Position 3
+	std::string FEN{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" }; // Position 4
+	//std::string FEN{ "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8" }; // Position 5
+	//std::string FEN{ "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10" }; // Position 6
 	SetBitboardsFromFEN(FEN);
-	m_BitBoardsHistory.emplace_back(m_BitBoards);
-
+	
 	UpdateColorBitboards();
-	CalculatePossibleMoves();
+	CalculatePossibleMoves(true);
+
+	UpdateGameStateHistory();
 }
 
-void ChessBoard::MakeMove(Move move, bool originalBoard)
+int ChessBoard::MoveGenerationTest(int depth)
 {
-	if (m_GameState != GameState::InProgress) return;
+	if (depth == 0) return 1;
 
-	m_EnPassantSquares = 0;
+	int positionsCounter{};
+	for (int index{}; index < m_PossibleMoves.size(); ++index)
+	{
 
-	if(!m_WhiteToMove) ++m_HalfMoveClock;
+		auto it{ m_PossibleMoves.begin() };
+		std::advance(it, index);
+		Move move{ *it };
+
+		if (move.moveType == MoveType::Capture || move.moveType == MoveType::BishopPromotionCapture || move.moveType == MoveType::KnightPromotionCapture || move.moveType == MoveType::RookPromotionCapture || move.moveType == MoveType::QueenPromotionCapture)
+			++m_CaptureAmount;
+
+		else if (move.moveType == MoveType::EnPassantCaptureLeft || move.moveType == MoveType::EnPassantCaptureRight)
+			++m_EnPassantAmount;
+
+		else if (move.moveType == MoveType::KingCastle || move.moveType == MoveType::QueenCastle)
+			++m_CastleAmount;
+
+		else if (move.moveType == MoveType::BishopPromotion || move.moveType == MoveType::KnightPromotion || move.moveType == MoveType::RookPromotion || move.moveType == MoveType::QueenPromotion || move.moveType == MoveType::BishopPromotionCapture || move.moveType == MoveType::KnightPromotionCapture || move.moveType == MoveType::RookPromotionCapture || move.moveType == MoveType::QueenPromotionCapture)
+			++m_PromotionAmount;
+
+		MakeMove(move, true, false);
+		positionsCounter += MoveGenerationTest(depth - 1);
+		UnMakeLastMove();
+	}
+
+	return positionsCounter;
+}
+
+void ChessBoard::MakeMove(Move move, bool originalBoard, bool canEndGame)
+{
+	m_WhiteToMove = !m_WhiteToMove;
+
+	if(m_WhiteToMove) ++m_HalfMoveClock;
 	++m_FullMoveCounter;
+	
+	m_EnPassantSquares = 0;
 
 	uint64_t* startBitBoard{GetBitboardFromSquare(move.startSquareIndex)};
 	CheckCastleRights(*startBitBoard, move.startSquareIndex);
 	
+	UpdateBitBoards(move, startBitBoard);
+	CalculatePossibleMoves(originalBoard);
+	if(canEndGame)
+		CheckForGameEnd();
+
+	UpdateGameStateHistory();
+}
+
+void ChessBoard::UnMakeLastMove()
+{
+	if (m_GameStateHistory.size() <= 1) return;
+
+	std::vector<GameState>::iterator it{ m_GameStateHistory.end() };
+
+	//GameState gameState = m_GameStateHistory.back();
+	--it;
+	--it;
+	GameState gameState = *it;
+
+	m_GameStateHistory.pop_back();
+
+	m_BitBoards = gameState.bitBoards;
+	m_PossibleMoves = gameState.possibleMoves;
+
+	m_WhiteToMove = gameState.whiteToMove;
+
+	m_WhiteCanCastleKingSide = gameState.whiteCanCastleKingSide;
+	m_WhiteCanCastleQueenSide = gameState.whiteCanCastleQueenSide;
+	m_BlackCanCastleKingSide = gameState.blackCanCastleKingSide;
+	m_BlackCanCastleQueenSide = gameState.blackCanCastleQueenSide;
+
+	m_EnPassantSquares = gameState.enPassantSquares;
+	m_HalfMoveClock = gameState.halfMoveClock;
+	m_FullMoveCounter = gameState.fullMoveCounter;
+
+}
+
+
+void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
+{
+
 	switch (move.moveType)
 	{
 		case MoveType::QuietMove:
@@ -40,7 +119,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 			m_EnPassantSquares |= static_cast<unsigned long long>(1) << (move.startSquareIndex + ((move.targetSquareIndex - move.startSquareIndex) / 2));
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -52,7 +131,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
 			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-			
+
 			break;
 		}
 		case MoveType::QueenCastle:
@@ -107,7 +186,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -127,7 +206,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -150,7 +229,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -163,7 +242,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*bishopBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -176,7 +255,7 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
@@ -189,31 +268,15 @@ void ChessBoard::MakeMove(Move move, bool originalBoard)
 			*queenBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
 
 			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			
+
 			m_HalfMoveClock = 0;
 			break;
 		}
 
 	}
+
 	UpdateColorBitboards();
-
-	m_BitBoardsHistory.emplace_back(m_BitBoards);
-	m_WhiteToMove = !m_WhiteToMove;
-
-	
-	CalculatePossibleMoves();
-	if (originalBoard)
-	{
-		CheckForIllegalMoves();
-	}
-	CheckForGameEnd();
 }
-
-void ChessBoard::UnMakeMove(Move move)
-{
-
-}
-
 
 void ChessBoard::CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex)
 {
@@ -223,39 +286,18 @@ void ChessBoard::CheckCastleRights(uint64_t startSquareBitBoard, int startSquare
 	if (startSquareBitBoard == m_BitBoards.blackKing) m_BlackCanCastleKingSide = m_BlackCanCastleQueenSide = false;
 
 
-	if (!m_WhiteKingSideRookHasMoved)
+	
+	if (startSquareBitBoard == m_BitBoards.whiteRooks)
 	{
-		if (startSquareBitBoard == m_BitBoards.whiteRooks && startSquareIndex % 8 == 7)
-		{
-			m_WhiteKingSideRookHasMoved = true;
-			m_WhiteCanCastleKingSide = false;
-		}
+		if(startSquareIndex % 8 == 7) m_WhiteCanCastleKingSide = false;
+		if(startSquareIndex % 8 == 0) m_WhiteCanCastleQueenSide = false;
 	}
-	if (!m_WhiteQueenSideRookHasMoved)
+	if (startSquareBitBoard == m_BitBoards.blackRooks)
 	{
-		if (startSquareBitBoard == m_BitBoards.whiteRooks && startSquareIndex % 8 == 0)
-		{
-			m_WhiteQueenSideRookHasMoved = true;
-			m_WhiteCanCastleQueenSide = false;
-		}
+		if (startSquareIndex % 8 == 7) m_BlackCanCastleKingSide = false;
+		if (startSquareIndex % 8 == 0) m_BlackCanCastleQueenSide = false;
 	}
-
-	if (!m_BlackKingSideRookHasMoved)
-	{
-		if (startSquareBitBoard == m_BitBoards.blackRooks && startSquareIndex % 8 == 7)
-		{
-			m_BlackKingSideRookHasMoved = true;
-			m_BlackCanCastleKingSide = false;
-		}
-	}
-	if (!m_BlackQueenSideRookHasMoved)
-	{
-		if (startSquareBitBoard == m_BitBoards.blackRooks && startSquareIndex % 8 == 0)
-		{
-			m_BlackQueenSideRookHasMoved = true;
-			m_BlackCanCastleQueenSide = false;
-		}
-	}
+	
 
 }
 void ChessBoard::UpdateColorBitboards()
@@ -310,7 +352,7 @@ Move ChessBoard::GetMoveFromSquares(int startSquare, int targetSquare)
 
 
 
-void ChessBoard::CalculatePossibleMoves()
+void ChessBoard::CalculatePossibleMoves(bool originalBoard)
 {
 	m_PossibleMoves.clear();
 
@@ -319,25 +361,33 @@ void ChessBoard::CalculatePossibleMoves()
 	CalculateBishopMoves();
 	CalculateRookMoves();
 	CalculateQueenMoves();
-	CalculateKingMoves();
+	CalculateKingMoves(originalBoard);
 
+	if(originalBoard)
+		CheckForIllegalMoves();
 }
 
 void ChessBoard::CalculatePawnMoves()
 {
-#pragma region BlackPawns
-	if(!m_WhiteToMove)
+	uint64_t pawnBitBoard{ m_WhiteToMove ? m_BitBoards.whitePawns : m_BitBoards.blackPawns };
+	uint64_t opponentBitBoard{ m_WhiteToMove ? m_BitBoards.blackPieces : m_BitBoards.whitePieces };
+
+	int verticalOffset{m_WhiteToMove ? -8 : 8};
+
+	
+	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		if (pawnBitBoard & static_cast<unsigned long long>(1) << squareIndex)
 		{
-			if (m_BitBoards.blackPawns & static_cast<unsigned long long>(1) << squareIndex)
+			// If the square in front has nothing (exluding Promotions)
 			{
-				// If the square in front has nothing (exluding Promotions)
-				if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + 8)) && squareIndex < 48)
+				bool onValidRow{ m_WhiteToMove ? squareIndex > 15 : squareIndex < 48 };
+				if (onValidRow &&
+					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset)))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 8;
+					move.targetSquareIndex = squareIndex + verticalOffset;
 					move.moveType = MoveType::QuietMove;
 
 					m_PossibleMoves.emplace_back(move);
@@ -345,180 +395,135 @@ void ChessBoard::CalculatePawnMoves()
 
 
 					// Double Pawn Push
-					if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + 16)) && squareIndex < 16)
+					bool onValidDoublePushRow{ m_WhiteToMove ? squareIndex > 47 : squareIndex < 16 };
+					if (onValidDoublePushRow &&
+						!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + 2 * verticalOffset)))
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex + 16;
+						move.targetSquareIndex = squareIndex + 2 * verticalOffset;
 						move.moveType = MoveType::DoublePawnPush;
 
 						m_PossibleMoves.emplace_back(move);
 					}
 				}
-				//-----------------------------------
-				// 
-				// Promotion
-				if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + 8)) && squareIndex > 47)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 8;
-					move.moveType = MoveType::QueenPromotion;
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// Side left Capture (including Promotion Captures)
-				if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + 7) && squareIndex % 8 != 0 && squareIndex < 56)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 7;
-					if (squareIndex > 47)
-						move.moveType = MoveType::QueenPromotionCapture;
-					else 
-						move.moveType = MoveType::Capture;
-					
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// Side right Capture (including Promotion Captures)
-				if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << (squareIndex + 9) && squareIndex % 8 != 7 && squareIndex < 56)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 9;
-					if (squareIndex > 47)
-						move.moveType = MoveType::QueenPromotionCapture;
-					else
-						move.moveType = MoveType::Capture;
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// En Passant Left
-				if (m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + 7) && squareIndex % 8 != 0 && squareIndex < 56)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 7;
-					move.moveType = MoveType::EnPassantCaptureLeft;
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// En Passant Right
-				if (m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + 9) && squareIndex % 8 != 7 && squareIndex < 56)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 9;
-					move.moveType = MoveType::EnPassantCaptureRight;
-
-					m_PossibleMoves.emplace_back(move);
-				}
 			}
-		}
-	}
-#pragma endregion
-
-#pragma region WhitePawns
-	if (m_WhiteToMove)
-	{
-		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
-		{
-			if (m_BitBoards.whitePawns & static_cast<unsigned long long>(1) << squareIndex)
+			//-----------------------------------
+			// 
+			// Promotion
 			{
-				// If the square in front has nothing (exluding Promotions)
-				if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex - 8)) && squareIndex > 15)
+				bool onValidRow{ m_WhiteToMove ? squareIndex < 16 : squareIndex > 47 };
+				if (onValidRow &&
+					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset)))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 8;
-					move.moveType = MoveType::QuietMove;
+					move.targetSquareIndex = squareIndex + verticalOffset;
 
+					move.moveType = MoveType::QueenPromotion;
 					m_PossibleMoves.emplace_back(move);
 
+					move.moveType = MoveType::RookPromotion;
+					m_PossibleMoves.emplace_back(move);
 
+					move.moveType = MoveType::BishopPromotion;
+					m_PossibleMoves.emplace_back(move);
 
-					// Double Pawn Push
-					if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex - 16)) && squareIndex > 47)
+					move.moveType = MoveType::KnightPromotion;
+					m_PossibleMoves.emplace_back(move);
+				}
+			}
+			//-----------------------------------
+			//
+			// Side left Capture (including Promotion Captures)
+			{
+				bool onValidSquare{ squareIndex % 8 != 0 };
+				if (onValidSquare && 
+					opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset - 1))
+				{
+					Move move{};
+					move.startSquareIndex = squareIndex;
+					move.targetSquareIndex = squareIndex + verticalOffset - 1;
+					if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
 					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex - 16;
-						move.moveType = MoveType::DoublePawnPush;
+						move.moveType = MoveType::QueenPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
 
+						move.moveType = MoveType::RookPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+
+						move.moveType = MoveType::BishopPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+
+						move.moveType = MoveType::KnightPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+					}
+					else
+					{
+						move.moveType = MoveType::Capture;
 						m_PossibleMoves.emplace_back(move);
 					}
 				}
-				//-----------------------------------
-				// 
-				// Promotion
-				if (!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex - 8)) && squareIndex < 16)
+			}
+			//-----------------------------------
+			//
+			// Side right Capture (including Promotion Captures)
+			{
+				bool onValidSquare{ squareIndex % 8 != 7 };
+				if (onValidSquare &&
+					opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset + 1))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 8;
-					move.moveType = MoveType::QueenPromotion;
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// Side left Capture (includes promotion captures)
-				if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex - 9) && squareIndex % 8 != 0 && squareIndex > 7)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 9;
-					if (squareIndex < 16)
+					move.targetSquareIndex = squareIndex + verticalOffset + 1;
+					if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
+					{
 						move.moveType = MoveType::QueenPromotionCapture;
-					else
-						move.moveType = MoveType::Capture;
+						m_PossibleMoves.emplace_back(move);
 
-					m_PossibleMoves.emplace_back(move);
+						move.moveType = MoveType::RookPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+
+						move.moveType = MoveType::BishopPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+
+						move.moveType = MoveType::KnightPromotionCapture;
+						m_PossibleMoves.emplace_back(move);
+					}
+					else
+					{
+						move.moveType = MoveType::Capture;
+						m_PossibleMoves.emplace_back(move);
+					}
 				}
-				//-----------------------------------
-				//
-				// Side right Capture (includes promotion captures)
-				if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << (squareIndex - 7) && squareIndex % 8 != 7 && squareIndex > 7)
+			}
+			//-----------------------------------
+			//
+			// En Passant Left
+			{
+				bool onValidSquare{squareIndex % 8 != 0};
+				if (onValidSquare && 
+					m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset - 1))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 7;
-					if (squareIndex < 16)
-						move.moveType = MoveType::QueenPromotionCapture;
-					else
-						move.moveType = MoveType::Capture;
-
-					m_PossibleMoves.emplace_back(move);
-				}
-				//-----------------------------------
-				//
-				// En Passant Left
-				if (m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex - 9) && squareIndex % 8 != 0 && squareIndex > 7)
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 9;
+					move.targetSquareIndex = squareIndex + verticalOffset - 1;
 					move.moveType = MoveType::EnPassantCaptureLeft;
 
 					m_PossibleMoves.emplace_back(move);
 				}
-				//-----------------------------------
-				//
-				// En Passant Right
-				if (m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex - 7) && squareIndex % 8 != 7 && squareIndex > 7)
+			}
+			//-----------------------------------
+			//
+			// En Passant Right
+			{
+				bool onValidSquare{ squareIndex % 8 != 7 };
+				if (onValidSquare &&
+					m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset + 1))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex - 7;
+					move.targetSquareIndex = squareIndex + verticalOffset + 1;
 					move.moveType = MoveType::EnPassantCaptureRight;
 
 					m_PossibleMoves.emplace_back(move);
@@ -526,227 +531,32 @@ void ChessBoard::CalculatePawnMoves()
 			}
 		}
 	}
-#pragma endregion
+	
 }
 void ChessBoard::CalculateKnightMoves()
 {
-#pragma region BlackKnights
-	if (!m_WhiteToMove)
+	uint64_t knightsBitBoard{ m_WhiteToMove ? m_BitBoards.whiteKnights : m_BitBoards.blackKnights };
+	uint64_t ownBitBoard{ m_WhiteToMove ? m_BitBoards.whitePieces : m_BitBoards.blackPieces };
+	uint64_t opponentBitBoard{ m_WhiteToMove ? m_BitBoards.blackPieces : m_BitBoards.whitePieces };
+
+	
+	
+	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
-		{
-			if(m_BitBoards.blackKnights & static_cast<unsigned long long>(1) << squareIndex)
-			{ 
-				//West-North-West
-				if (squareIndex % 8 >= 2 && squareIndex > 7)
-				{
-					int newSquareIndex{squareIndex - 10};
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//North-North-West
-				if (squareIndex % 8 >= 1 && squareIndex > 15)
-				{
-					int newSquareIndex{ squareIndex - 17 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//North-North-East
-				if (squareIndex % 8 <= 6 && squareIndex > 15)
-				{
-					int newSquareIndex{ squareIndex - 15 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//East-North-East
-				if (squareIndex % 8 <= 5 && squareIndex > 7)
-				{
-					int newSquareIndex{ squareIndex - 6 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//East-South-East
-				if (squareIndex % 8 <= 5 && squareIndex < 56)
-				{
-					int newSquareIndex{ squareIndex + 10 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//South-South-East
-				if (squareIndex % 8 <= 6 && squareIndex < 48)
-				{
-					int newSquareIndex{ squareIndex + 17 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//South-South-West
-				if (squareIndex % 8 >= 1 && squareIndex < 48)
-				{
-					int newSquareIndex{ squareIndex + 15 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//West-South-West
-				if (squareIndex % 8 >= 2 && squareIndex < 56)
-				{
-					int newSquareIndex{ squareIndex + 6 };
-
-					if (m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-			}
-		}
-	}
-#pragma endregion
-
-#pragma region WhiteKnights
-	if (m_WhiteToMove)
-	{
-		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
-		{
-			if (m_BitBoards.whiteKnights & static_cast<unsigned long long>(1) << squareIndex)
+		if(knightsBitBoard & static_cast<unsigned long long>(1) << squareIndex)
+		{ 
+			for (int index{}; index < m_KnightOffsets.squareOffsets.size(); ++index)
 			{
-				//West-North-West
-				if (squareIndex % 8 >= 2 && squareIndex > 7)
-				{
-					int newSquareIndex{ squareIndex - 10 };
+				int newSquareIndex{ squareIndex + m_KnightOffsets.squareOffsets[index] };
 
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
+				int leftBound{ m_KnightOffsets.leftBounds[index] };
+				int northBound{ m_KnightOffsets.northBounds[index] };
+				int rightBound{ m_KnightOffsets.rightBounds[index] };
+				int southBound{ m_KnightOffsets.southBounds[index] };
+
+				if (squareIndex % 8 >= leftBound && squareIndex / 8 >= northBound && squareIndex % 8 <= 7 - rightBound && squareIndex / 8 <= 7 - southBound)
+				{
+					if (opponentBitBoard & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
@@ -755,175 +565,7 @@ void ChessBoard::CalculateKnightMoves()
 
 						m_PossibleMoves.emplace_back(move);
 					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//North-North-West
-				if (squareIndex % 8 >= 1 && squareIndex > 15)
-				{
-					int newSquareIndex{ squareIndex - 17 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//North-North-East
-				if (squareIndex % 8 <= 6 && squareIndex > 15)
-				{
-					int newSquareIndex{ squareIndex - 15 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//East-North-East
-				if (squareIndex % 8 <= 5 && squareIndex > 7)
-				{
-					int newSquareIndex{ squareIndex - 6 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//East-South-East
-				if (squareIndex % 8 <= 5 && squareIndex < 56)
-				{
-					int newSquareIndex{ squareIndex + 10 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//South-South-East
-				if (squareIndex % 8 <= 6 && squareIndex < 48)
-				{
-					int newSquareIndex{ squareIndex + 17 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//South-South-West
-				if (squareIndex % 8 >= 1 && squareIndex < 48)
-				{
-					int newSquareIndex{ squareIndex + 15 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::QuietMove;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-				}
-				//West-South-West
-				if (squareIndex % 8 >= 2 && squareIndex < 56)
-				{
-					int newSquareIndex{ squareIndex + 6 };
-
-					if (m_BitBoards.blackPieces & static_cast<unsigned long long>(1) << newSquareIndex)
-					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = newSquareIndex;
-						move.moveType = MoveType::Capture;
-
-						m_PossibleMoves.emplace_back(move);
-					}
-					else if (~m_BitBoards.whitePieces & static_cast<unsigned long long>(1) << newSquareIndex)
+					else if (~ownBitBoard & static_cast<unsigned long long>(1) << newSquareIndex)
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
@@ -934,9 +576,11 @@ void ChessBoard::CalculateKnightMoves()
 					}
 				}
 			}
+
+
+			
 		}
 	}
-#pragma endregion
 }
 void ChessBoard::CalculateBishopMoves()
 {
@@ -1273,7 +917,12 @@ void ChessBoard::CalculateQueenMoves()
 	}
 #pragma endregion
 }
-void ChessBoard::CalculateKingMoves()
+void ChessBoard::CalculateSlidingMoves()
+{
+
+
+}
+void ChessBoard::CalculateKingMoves(bool originalBoard)
 {
 	std::vector<int> directionOffsets{ -1, -8, +1, +8,  -9, -7, +9, +7 };
 	std::vector<int> directionLengths{ 0, 0, 0, 0,  0, 0, 0, 0 };
@@ -1334,12 +983,15 @@ void ChessBoard::CalculateKingMoves()
 					if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 2)) &&
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 1)))
 					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex + 2;
-						move.moveType = MoveType::KingCastle;
+						if (originalBoard && !IsSquareInCheckByOtherColor(squareIndex + 1))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + 2;
+							move.moveType = MoveType::KingCastle;
 
-						m_PossibleMoves.emplace_back(move);
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 				if (m_BlackCanCastleQueenSide)
@@ -1348,12 +1000,15 @@ void ChessBoard::CalculateKingMoves()
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 2)) &&
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 3)))
 					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex - 2;
-						move.moveType = MoveType::QueenCastle;
+						if (originalBoard && !IsSquareInCheckByOtherColor(squareIndex - 1))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex - 2;
+							move.moveType = MoveType::QueenCastle;
 
-						m_PossibleMoves.emplace_back(move);
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 			}
@@ -1419,12 +1074,15 @@ void ChessBoard::CalculateKingMoves()
 					if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 2)) &&
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 1)))
 					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex + 2;
-						move.moveType = MoveType::KingCastle;
+						if (originalBoard && !IsSquareInCheckByOtherColor(squareIndex + 1))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex + 2;
+							move.moveType = MoveType::KingCastle;
 
-						m_PossibleMoves.emplace_back(move);
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 				if (m_WhiteCanCastleQueenSide)
@@ -1433,12 +1091,15 @@ void ChessBoard::CalculateKingMoves()
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 2)) &&
 						!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 3)))
 					{
-						Move move{};
-						move.startSquareIndex = squareIndex;
-						move.targetSquareIndex = squareIndex - 2;
-						move.moveType = MoveType::QueenCastle;
+						if (originalBoard && !IsSquareInCheckByOtherColor(squareIndex - 1))
+						{
+							Move move{};
+							move.startSquareIndex = squareIndex;
+							move.targetSquareIndex = squareIndex - 2;
+							move.moveType = MoveType::QueenCastle;
 
-						m_PossibleMoves.emplace_back(move);
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 			}
@@ -1454,7 +1115,7 @@ void ChessBoard::CheckForIllegalMoves()
 	for (auto it{m_PossibleMoves.begin()}; it != m_PossibleMoves.end(); ++it)
 	{
 		ChessBoard simulatedChessBoard{ *this };
-		simulatedChessBoard.MakeMove(*it, false);
+		simulatedChessBoard.MakeMove(*it, false, false);
 
 		if (simulatedChessBoard.IsOtherKingInCheck())
 		{
@@ -1491,6 +1152,22 @@ bool ChessBoard::IsOtherKingInCheck()
 	return false;
 }
 
+bool ChessBoard::IsSquareInCheckByOtherColor(int squareIndex)
+{
+	ChessBoard copyBoard{ *this };
+	copyBoard.m_WhiteToMove = !m_WhiteToMove;
+	copyBoard.CalculatePossibleMoves(false);
+
+	for (auto& move : copyBoard.m_PossibleMoves)
+	{
+		if (move.targetSquareIndex == squareIndex)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 
 void ChessBoard::CheckForGameEnd()
 {
@@ -1505,18 +1182,18 @@ void ChessBoard::CheckForCheckmate()
 	{
 		ChessBoard copiedChessBoard{ *this };
 		copiedChessBoard.m_WhiteToMove = !copiedChessBoard.m_WhiteToMove;
-		copiedChessBoard.CalculatePossibleMoves();
+		copiedChessBoard.CalculatePossibleMoves(false);
 
 		if (copiedChessBoard.IsOtherKingInCheck())
 		{
 			if (m_WhiteToMove)
-				m_GameState = GameState::BlackWon;
+				m_GameProgress = GameProgress::BlackWon;
 			else
-				m_GameState = GameState::WhiteWon;
+				m_GameProgress = GameProgress::WhiteWon;
 		}
 		else
 		{
-			m_GameState = GameState::Draw;
+			m_GameProgress = GameProgress::Draw;
 		}
 		m_FirstFrameGameEnd = true;
 	}
@@ -1525,7 +1202,7 @@ void ChessBoard::CheckForFiftyMoveRule()
 {
 	if (m_HalfMoveClock >= 50)
 	{
-		m_GameState = GameState::Draw;
+		m_GameProgress = GameProgress::Draw;
 
 		m_FirstFrameGameEnd = true;
 	}
@@ -1595,7 +1272,7 @@ void ChessBoard::CheckForInsufficientMaterial()
 
 	if (insufficientMaterial)
 	{
-		m_GameState = GameState::Draw;
+		m_GameProgress = GameProgress::Draw;
 		m_FirstFrameGameEnd = true;
 	}
 }
@@ -1611,20 +1288,41 @@ int ChessBoard::GetAmountOfPiecesFromBitBoard(uint64_t bitBoard)
 void ChessBoard::CheckForRepetition()
 {
 	int amountOfCurrentApearences{0};
-	for (auto& bitBoard : m_BitBoardsHistory)
+	for (auto& gameState : m_GameStateHistory)
 	{
-		if (bitBoard == m_BitBoards)
+		if (gameState.bitBoards == m_BitBoards)
 		{
 			++amountOfCurrentApearences;
 		}
 	}
 
-	if (amountOfCurrentApearences >= 3)
+	if (amountOfCurrentApearences >= 2)
 	{
-		m_GameState = GameState::Draw;
+		m_GameProgress = GameProgress::Draw;
 		m_FirstFrameGameEnd = true;
 	}
 
+}
+
+void ChessBoard::UpdateGameStateHistory()
+{
+	GameState gameState{};
+
+	gameState.bitBoards = m_BitBoards;
+	gameState.possibleMoves = m_PossibleMoves;
+
+	gameState.whiteToMove = m_WhiteToMove;
+
+	gameState.whiteCanCastleKingSide = m_WhiteCanCastleKingSide;
+	gameState.whiteCanCastleQueenSide = m_WhiteCanCastleQueenSide;
+	gameState.blackCanCastleKingSide = m_BlackCanCastleKingSide;
+	gameState.blackCanCastleQueenSide = m_BlackCanCastleQueenSide;
+
+	gameState.enPassantSquares = m_EnPassantSquares;
+	gameState.halfMoveClock = m_HalfMoveClock;
+	gameState.fullMoveCounter = m_FullMoveCounter;
+
+	m_GameStateHistory.emplace_back(gameState);
 }
 
 

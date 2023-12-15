@@ -1,6 +1,8 @@
 #pragma once
 
 #include "stdint.h"
+#include <list>
+#include <vector>
 
 struct BitBoards
 {
@@ -86,11 +88,38 @@ struct Move
 
 };
 
-enum class GameState
+enum class GameProgress
 {
 	InProgress,
 	Draw,
 	WhiteWon,
 	BlackWon
+};
+
+struct GameState
+{
+	BitBoards bitBoards;
+	std::list<Move> possibleMoves;
+
+	bool whiteToMove;
+
+	bool whiteCanCastleQueenSide;
+	bool whiteCanCastleKingSide;
+	bool blackCanCastleQueenSide;
+	bool blackCanCastleKingSide;
+
+	uint64_t enPassantSquares;
+
+	int halfMoveClock;
+	int fullMoveCounter;
+};
+
+struct KnightOffsets
+{
+	std::vector<int> squareOffsets{ -10, -17, -15, -6, +10, +17, +15, +6 };
+	std::vector<int> leftBounds{ 2, 1, 0, 0, 0, 0, 1, 2 };
+	std::vector<int> northBounds{ 1, 2, 2, 1, 0, 0, 0, 0 };
+	std::vector<int> rightBounds{ 0, 0, 1, 2, 2, 1, 0, 0 };
+	std::vector<int> southBounds{ 0, 0, 0, 0, 1, 2, 2, 1 };
 };
 

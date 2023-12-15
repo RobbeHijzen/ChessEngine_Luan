@@ -20,7 +20,7 @@ public:
 	DrawableChessBoard& operator=(DrawableChessBoard&& other) noexcept = delete;
 
 
-	void Draw(int selectedStartSquareIndex);
+	void Draw(int selectedStartSquareIndex, bool inMoveGeneration);
 
 	Point2i GetTopLeftPos() { return m_TopLeftPos; };
 	int GetCellSize() { return m_CellSize; };

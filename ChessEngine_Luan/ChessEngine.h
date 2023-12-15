@@ -66,6 +66,10 @@ private:
 	bool m_HasASquareSelected{ false };
 	int m_CurrentSelectedSquare{};
 
+	std::unique_ptr<Font> m_pFont{};
+	int m_MoveGenerationTestAmount{};
+	bool m_InMoveGeneration{ false };
+
 	int GetIndexFromPosition(Point2i position);
 };
 

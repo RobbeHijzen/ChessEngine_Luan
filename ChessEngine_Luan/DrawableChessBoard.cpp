@@ -9,12 +9,13 @@ DrawableChessBoard::DrawableChessBoard()
 	m_TopLeftPos.y = (GAME_ENGINE->GetHeight() - m_pTexChessBoard->GetHeight()) / 2;
 }
 
-void DrawableChessBoard::Draw(int selectedStartSquareIndex)
+void DrawableChessBoard::Draw(int selectedStartSquareIndex, bool inMoveGeneration)
 {
 	DrawBoard();
 	DrawPieces();
 
-	DrawPossibleMoves(selectedStartSquareIndex);
+	if(!inMoveGeneration)
+		DrawPossibleMoves(selectedStartSquareIndex);
 }
 void DrawableChessBoard::DrawBoard()
 {

@@ -32,16 +32,18 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	// Set the optional values
 	GAME_ENGINE->SetWidth(1440);
 	GAME_ENGINE->SetHeight(810);
-    GAME_ENGINE->SetFrameRate(50);
+    GAME_ENGINE->SetFrameRate(10000000);
 
 	// Set the keys that the game needs to listen to
-	//tstringstream buffer;
+	tstringstream buffer;
+	buffer << _T("ZM");
 	//buffer << _T("KLMO");
 	//buffer << (TCHAR) VK_LEFT;
 	//buffer << (TCHAR) VK_RIGHT;
-	//GAME_ENGINE->SetKeyList(buffer.str());
+	GAME_ENGINE->SetKeyList(buffer.str());
 
 	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
+	m_pFont = std::make_unique<Font>(L"Arial", true, false, false, 50);
 }
 
 void ChessEngine::Start()
@@ -59,30 +61,42 @@ void ChessEngine::Paint(RECT rect)
 	// Insert paint code 
 	GAME_ENGINE->DrawSolidBackground(RGB(20, 20, 20));
 
-	m_pDrawableChessBoard->Draw(m_CurrentSelectedSquare);
+	m_pDrawableChessBoard->Draw(m_CurrentSelectedSquare, m_InMoveGeneration);
+
+	std::wstring s1{ std::to_wstring(m_MoveGenerationTestAmount) };
+	std::wstring s2{ std::to_wstring(m_pDrawableChessBoard->GetCaptureAmount()) };
+	std::wstring s3{ std::to_wstring(m_pDrawableChessBoard->GetEnPassantAmount()) };
+	std::wstring s4{ std::to_wstring(m_pDrawableChessBoard->GetCastleAmount()) };
+	std::wstring s5{ std::to_wstring(m_pDrawableChessBoard->GetPromotionAmount()) };
+	GAME_ENGINE->SetFont(m_pFont.get());
+	GAME_ENGINE->DrawString(s1, 100, 100);
+	GAME_ENGINE->DrawString(s2, 100, 150);
+	GAME_ENGINE->DrawString(s3, 100, 200);
+	GAME_ENGINE->DrawString(s4, 100, 250);
+	GAME_ENGINE->DrawString(s5, 100, 300);
 }
 
 void ChessEngine::Tick()
 {
 	if (m_pDrawableChessBoard->GetFirstFrameGameEnd())
 	{
-		switch (m_pDrawableChessBoard->GetGameState())
+		switch (m_pDrawableChessBoard->GetGameProgress())
 		{
-			case GameState::Draw:
+			case GameProgress::Draw:
 			{
 				tstring s{ L"The game has Drawn" };
 				GAME_ENGINE->MessageBox(s);
 
 				break;
 			}
-			case GameState::WhiteWon:
+			case GameProgress::WhiteWon:
 			{
 				tstring s{ L"White Has Won!" };
 				GAME_ENGINE->MessageBox(s);
 
 				break;
 			}
-			case GameState::BlackWon:
+			case GameProgress::BlackWon:
 			{
 				tstring s{ L"Black Has Won!" };
 				GAME_ENGINE->MessageBox(s);
@@ -119,6 +133,7 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 			{
 				m_pDrawableChessBoard->MakeMove(move);
 				m_HasASquareSelected = false;
+				m_CurrentSelectedSquare = -1;
 			}
 			else
 			{
@@ -194,6 +209,21 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 		GAME_ENGINE->MessageBox(_T("Escape menu."));
 	}
 	*/
+	
+	switch (cKey)
+	{
+		case _T('Z'):
+		{
+			m_pDrawableChessBoard->UnMakeLastMove();
+			break;
+		}
+		case _T('M'):
+		{
+			m_InMoveGeneration = true;
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->MoveGenerationTest(3);
+			break;
+		}
+	}
 }
 
 void ChessEngine::CallAction(Caller* callerPtr)
