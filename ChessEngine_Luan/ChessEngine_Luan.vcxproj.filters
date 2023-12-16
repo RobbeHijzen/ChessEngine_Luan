@@ -65,9 +65,6 @@
     <ClInclude Include="ChessStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Test.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="big.ico">

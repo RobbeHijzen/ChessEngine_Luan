@@ -60,6 +60,9 @@ private:
 	bool m_FirstFrameGameEnd{ false };
 
 	bool m_WhiteToMove{ true };
+	bool m_IsKingInCheck{ false };
+	bool m_IsKingInDoubleCheck{ false };
+
 
 	bool m_WhiteCanCastleQueenSide{ false };
 	bool m_WhiteCanCastleKingSide{ false };
@@ -78,16 +81,31 @@ private:
 
 	const BitMasks m_BitMasks{};
 
+	uint64_t m_CurrentPawnsBitBoard{};
+	uint64_t m_CurrentKnightsBitBoard{};
+	uint64_t m_CurrentBishopsBitBoard{};
+	uint64_t m_CurrentRooksBitBoard{};
+	uint64_t m_CurrentQueensBitBoard{};
+	uint64_t m_CurrentKingBitBoard{};
+
+	uint64_t m_CurrentOwnPiecesBitBoard{};
+	uint64_t m_CurrentOpponentPiecesBitBoard{};
+
+	uint64_t* m_pCurrentOwnThreatMap{};
+	uint64_t* m_pCurrentOpponentThreatMap{};
+
+
+
 	int MoveGenerationTest(int depth, int initialDepth);
 
 	void UpdateBitBoards(Move move, uint64_t* startBitBoard);
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
 	void CalculatePossibleMoves(bool originalBoard);
-	void CalculatePawnMoves();
-	void CalculateKnightMoves();
-	void CalculateSlidingMoves();
-	void CalculateKingMoves(bool originalBoard = true);
+	void CalculatePawnMoves(int squareIndex, bool onlyThreatMapUpdate = false);
+	void CalculateKnightMoves(int squareIndex, bool onlyThreatMapUpdate = false);
+	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex, bool onlyThreatMapUpdate = false);
+	void CalculateKingMoves(int squareIndex, bool originalBoard = true, bool onlyThreatMapUpdate = false);
 
 	void CheckForIllegalMoves();
 

@@ -24,7 +24,13 @@ struct BitBoards
 	uint64_t whitePieces{};
 	uint64_t blackPieces{};
 
-	uint64_t nullBitBoard{0};
+	uint64_t checkRay{};
+
+	uint64_t whiteThreatMap{};
+	uint64_t blackThreatMap{};
+
+	uint64_t nullBitBoard{};
+
 
 	bool operator==(BitBoards other)
 	{
@@ -39,7 +45,11 @@ struct BitBoards
 			   blackBishops == other.blackBishops &&
 			   blackRooks == other.blackRooks &&
 			   blackQueens == other.blackQueens &&
-			   blackKing == other.blackKing;
+			   blackKing == other.blackKing &&
+			   whiteThreatMap == other.whiteThreatMap &&
+			   blackThreatMap == other.blackThreatMap &&
+			   checkRay == other.checkRay;
+				
 	}
 };
 
