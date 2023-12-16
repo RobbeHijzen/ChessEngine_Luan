@@ -125,8 +125,8 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 	{
 		case MoveType::QuietMove:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex];
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			if (*startBitBoard == m_BitBoards.whitePawns || *startBitBoard == m_BitBoards.blackPawns) m_HalfMoveClock = 0;
 
@@ -134,9 +134,9 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		}
 		case MoveType::DoublePawnPush:
 		{
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
-			m_EnPassantSquares |= static_cast<unsigned long long>(1) << (move.startSquareIndex + ((move.targetSquareIndex - move.startSquareIndex) / 2));
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
+			m_EnPassantSquares |= m_BitMasks.bitMasks[move.startSquareIndex + (move.targetSquareIndex - move.startSquareIndex) / 2];
 
 			m_HalfMoveClock = 0;
 			break;
@@ -144,32 +144,32 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::KingCastle:
 		{
 			uint64_t* rookBitBoard{ GetBitboardFromSquare(move.targetSquareIndex + 1) };
-			*rookBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + 1);
-			*rookBitBoard |= static_cast<unsigned long long>(1) << (move.targetSquareIndex - 1);
+			*rookBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex + 1];
+			*rookBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex - 1];
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			break;
 		}
 		case MoveType::QueenCastle:
 		{
 			uint64_t* rookBitBoard{ GetBitboardFromSquare(move.targetSquareIndex - 2) };
-			*rookBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex - 2);
-			*rookBitBoard |= static_cast<unsigned long long>(1) << (move.targetSquareIndex + 1);
+			*rookBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex - 2];
+			*rookBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex + 1];
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex];
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			break;
 		}
 		case MoveType::Capture:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*targetBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -177,11 +177,11 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::EnPassantCaptureLeft:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare((move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1))) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1));
+			*targetBitBoard ^= m_BitMasks.bitMasks[(move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex - 1))] ;
 
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -189,11 +189,11 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::EnPassantCaptureRight:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare((move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex + 1))) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << (move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex + 1));
+			*targetBitBoard ^= m_BitMasks.bitMasks[(move.targetSquareIndex + (move.startSquareIndex - move.targetSquareIndex + 1))] ;
 
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
-			*startBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
+			*startBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -201,9 +201,9 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::KnightPromotion:
 		{
 			uint64_t* knightBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteKnights : &m_BitBoards.blackKnights };
-			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*knightBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex];
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -211,9 +211,9 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::BishopPromotion:
 		{
 			uint64_t* bishopBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteBishops : &m_BitBoards.blackBishops };
-			*bishopBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*bishopBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -221,9 +221,9 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::RookPromotion:
 		{
 			uint64_t* rookBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteRooks : &m_BitBoards.blackRooks };
-			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*rookBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -231,9 +231,9 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::QueenPromotion:
 		{
 			uint64_t* queenBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteQueens : &m_BitBoards.blackQueens };
-			*queenBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*queenBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -241,12 +241,12 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::KnightPromotionCapture:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*targetBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			uint64_t* knightBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteKnights : &m_BitBoards.blackKnights };
-			*knightBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*knightBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -254,12 +254,12 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::BishopPromotionCapture:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*targetBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			uint64_t* bishopBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteBishops : &m_BitBoards.blackBishops };
-			*bishopBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*bishopBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -267,12 +267,12 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::RookPromotionCapture:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*targetBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			uint64_t* rookBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteRooks : &m_BitBoards.blackRooks };
-			*rookBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*rookBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -280,12 +280,12 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 		case MoveType::QueenPromotionCapture:
 		{
 			uint64_t* targetBitBoard{ GetBitboardFromSquare(move.targetSquareIndex) };
-			*targetBitBoard ^= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*targetBitBoard ^= m_BitMasks.bitMasks[move.targetSquareIndex] ;
 
 			uint64_t* queenBitBoard{ (*startBitBoard & m_BitBoards.whitePieces) ? &m_BitBoards.whiteQueens : &m_BitBoards.blackQueens };
-			*queenBitBoard |= static_cast<unsigned long long>(1) << move.targetSquareIndex;
+			*queenBitBoard |= m_BitMasks.bitMasks[move.targetSquareIndex];
 
-			*startBitBoard ^= static_cast<unsigned long long>(1) << move.startSquareIndex;
+			*startBitBoard ^= m_BitMasks.bitMasks[move.startSquareIndex] ;
 
 			m_HalfMoveClock = 0;
 			break;
@@ -325,19 +325,19 @@ void ChessBoard::UpdateColorBitboards()
 }
 uint64_t* ChessBoard::GetBitboardFromSquare(int squareIndex)
 {
-	if (m_BitBoards.whitePawns & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whitePawns;
-	if (m_BitBoards.whiteKnights & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whiteKnights;
-	if (m_BitBoards.whiteBishops & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whiteBishops;
-	if (m_BitBoards.whiteRooks & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whiteRooks;
-	if (m_BitBoards.whiteQueens & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whiteQueens;
-	if (m_BitBoards.whiteKing & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.whiteKing;
+	if (m_BitBoards.whitePawns & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whitePawns;
+	if (m_BitBoards.whiteKnights & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whiteKnights;
+	if (m_BitBoards.whiteBishops & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whiteBishops;
+	if (m_BitBoards.whiteRooks & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whiteRooks;
+	if (m_BitBoards.whiteQueens & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whiteQueens;
+	if (m_BitBoards.whiteKing & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.whiteKing;
 
-	if (m_BitBoards.blackPawns & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackPawns;
-	if (m_BitBoards.blackKnights & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackKnights;
-	if (m_BitBoards.blackBishops & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackBishops;
-	if (m_BitBoards.blackRooks & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackRooks;
-	if (m_BitBoards.blackQueens & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackQueens;
-	if (m_BitBoards.blackKing & static_cast<unsigned long long>(1) << squareIndex) return &m_BitBoards.blackKing;
+	if (m_BitBoards.blackPawns & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackPawns;
+	if (m_BitBoards.blackKnights & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackKnights;
+	if (m_BitBoards.blackBishops & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackBishops;
+	if (m_BitBoards.blackRooks & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackRooks;
+	if (m_BitBoards.blackQueens & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackQueens;
+	if (m_BitBoards.blackKing & m_BitMasks.bitMasks[squareIndex] ) return &m_BitBoards.blackKing;
 
 	return &m_BitBoards.nullBitBoard;
 }
@@ -391,13 +391,13 @@ void ChessBoard::CalculatePawnMoves()
 	
 	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		if (pawnBitBoard & static_cast<unsigned long long>(1) << squareIndex)
+		if (pawnBitBoard & m_BitMasks.bitMasks[squareIndex] )
 		{
 			// If the square in front has nothing (exluding Promotions)
 			{
 				bool onValidRow{ m_WhiteToMove ? squareIndex > 15 : squareIndex < 48 };
 				if (onValidRow &&
-					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset)))
+					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + verticalOffset)] ))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -411,7 +411,7 @@ void ChessBoard::CalculatePawnMoves()
 					// Double Pawn Push
 					bool onValidDoublePushRow{ m_WhiteToMove ? squareIndex > 47 : squareIndex < 16 };
 					if (onValidDoublePushRow &&
-						!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + 2 * verticalOffset)))
+						!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + 2 * verticalOffset)] ))
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
@@ -428,7 +428,7 @@ void ChessBoard::CalculatePawnMoves()
 			{
 				bool onValidRow{ m_WhiteToMove ? squareIndex < 16 : squareIndex > 47 };
 				if (onValidRow &&
-					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset)))
+					!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + verticalOffset)] ))
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -453,7 +453,7 @@ void ChessBoard::CalculatePawnMoves()
 			{
 				bool onValidSquare{ squareIndex % 8 != 0 };
 				if (onValidSquare && 
-					opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset - 1))
+					opponentBitBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset - 1)] )
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -485,7 +485,7 @@ void ChessBoard::CalculatePawnMoves()
 			{
 				bool onValidSquare{ squareIndex % 8 != 7 };
 				if (onValidSquare &&
-					opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset + 1))
+					opponentBitBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)] )
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -517,7 +517,7 @@ void ChessBoard::CalculatePawnMoves()
 			{
 				bool onValidSquare{squareIndex % 8 != 0};
 				if (onValidSquare && 
-					m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset - 1))
+					m_EnPassantSquares & m_BitMasks.bitMasks[(squareIndex + verticalOffset - 1)] )
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -533,7 +533,7 @@ void ChessBoard::CalculatePawnMoves()
 			{
 				bool onValidSquare{ squareIndex % 8 != 7 };
 				if (onValidSquare &&
-					m_EnPassantSquares & static_cast<unsigned long long>(1) << (squareIndex + verticalOffset + 1))
+					m_EnPassantSquares & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)] )
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -557,7 +557,7 @@ void ChessBoard::CalculateKnightMoves()
 	
 	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		if(knightsBitBoard & static_cast<unsigned long long>(1) << squareIndex)
+		if(knightsBitBoard & m_BitMasks.bitMasks[squareIndex] )
 		{ 
 			for (int index{}; index < m_KnightOffsets.squareOffsets.size(); ++index)
 			{
@@ -570,7 +570,7 @@ void ChessBoard::CalculateKnightMoves()
 
 				if (squareIndex % 8 >= leftBound && squareIndex / 8 >= northBound && squareIndex % 8 <= 7 - rightBound && squareIndex / 8 <= 7 - southBound)
 				{
-					if (opponentBitBoard & static_cast<unsigned long long>(1) << newSquareIndex)
+					if (opponentBitBoard & m_BitMasks.bitMasks[newSquareIndex] )
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
@@ -579,7 +579,7 @@ void ChessBoard::CalculateKnightMoves()
 
 						m_PossibleMoves.emplace_back(move);
 					}
-					else if (~ownBitBoard & static_cast<unsigned long long>(1) << newSquareIndex)
+					else if (~ownBitBoard & m_BitMasks.bitMasks[newSquareIndex] )
 					{
 						Move move{};
 						move.startSquareIndex = squareIndex;
@@ -610,7 +610,7 @@ void ChessBoard::CalculateSlidingMoves()
 
 	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		uint64_t mask{ static_cast<unsigned long long>(1) << squareIndex };
+		uint64_t mask{ m_BitMasks.bitMasks[squareIndex]  };
 
 		if (rooksBitBoard & mask)
 		{
@@ -636,11 +636,11 @@ void ChessBoard::CalculateSlidingMoves()
 			{
 				int currentOffset{ m_SlidingOffsets.squareOffsets[directionIndex] };
 
-				if (ownBitBoard & static_cast<unsigned long long>(1) << (squareIndex + currentOffset * multipliedIndex))
+				if (ownBitBoard & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)] )
 				{
 					break;
 				}
-				else if (opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + currentOffset * multipliedIndex))
+				else if (opponentBitBoard & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)] )
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -679,18 +679,18 @@ void ChessBoard::CalculateKingMoves(bool originalBoard)
 	
 	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
 	{
-		if (kingBitBoard & static_cast<unsigned long long>(1) << squareIndex)
+		if (kingBitBoard & m_BitMasks.bitMasks[squareIndex] )
 		{
 			for (int directionIndex{}; directionIndex < 8; ++directionIndex)
 			{
 				if (m_SlidingOffsets.distancesFromEdges[directionIndex][squareIndex] == 0) continue;
 				int directionOffset{ m_SlidingOffsets.squareOffsets[directionIndex] };
 
-				if (ownBitBoard & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+				if (ownBitBoard & m_BitMasks.bitMasks[(squareIndex + directionOffset)] )
 				{
 					continue;
 				}
-				else if (opponentBitBoard & static_cast<unsigned long long>(1) << (squareIndex + directionOffset))
+				else if (opponentBitBoard & m_BitMasks.bitMasks[(squareIndex + directionOffset)])
 				{
 					Move move{};
 					move.startSquareIndex = squareIndex;
@@ -719,8 +719,8 @@ void ChessBoard::CalculateKingMoves(bool originalBoard)
 				// If the king is in check, can't castle
 				if (IsSquareInCheckByOtherColor(squareIndex)) break;
 
-				if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 2)) &&
-					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex + 1)))
+				if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex + 2)]) &&
+					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex + 1)] ))
 				{
 					if (!IsSquareInCheckByOtherColor(squareIndex + 1))
 					{
@@ -739,9 +739,9 @@ void ChessBoard::CalculateKingMoves(bool originalBoard)
 				if (IsSquareInCheckByOtherColor(squareIndex)) break;
 
 
-				if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 1)) &&
-					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 2)) &&
-					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & static_cast<unsigned long long>(1) << (squareIndex - 3)))
+				if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 1)] ) &&
+					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 2)] ) &&
+					!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 3)] ))
 				{
 					if (!IsSquareInCheckByOtherColor(squareIndex - 1))
 					{
@@ -785,7 +785,7 @@ bool ChessBoard::IsOtherKingInCheck()
 	int kingSquareIndex{};
 	for (int index{}; index < 64; ++index)
 	{
-		if (kingBitBoard & static_cast<unsigned long long>(1) << index)
+		if (kingBitBoard & m_BitMasks.bitMasks[index] )
 		{
 			kingSquareIndex = index;
 			break;
@@ -931,7 +931,7 @@ int ChessBoard::GetAmountOfPiecesFromBitBoard(uint64_t bitBoard)
 	int amount{};
 	for (int index{}; index < 64; ++index)
 	{
-		if (bitBoard & static_cast<unsigned long long>(1) << index) ++amount;
+		if (bitBoard & m_BitMasks.bitMasks[index] ) ++amount;
 	}
 	return amount;
 }
@@ -1061,62 +1061,62 @@ void ChessBoard::SetPositionFromChar(char c, int& squareIndex)
 	{
 		case 'P':
 		{
-			m_BitBoards.whitePawns |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whitePawns |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'p':
 		{
-			m_BitBoards.blackPawns |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackPawns |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'N':
 		{
-			m_BitBoards.whiteKnights |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whiteKnights |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'n':
 		{
-			m_BitBoards.blackKnights |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackKnights |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'B':
 		{
-			m_BitBoards.whiteBishops |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whiteBishops |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'b':
 		{
-			m_BitBoards.blackBishops |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackBishops |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'R':
 		{
-			m_BitBoards.whiteRooks |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whiteRooks |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'r':
 		{
-			m_BitBoards.blackRooks |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackRooks |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'Q':
 		{
-			m_BitBoards.whiteQueens |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whiteQueens |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'q':
 		{
-			m_BitBoards.blackQueens |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackQueens |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'K':
 		{
-			m_BitBoards.whiteKing |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.whiteKing |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 		case 'k':
 		{
-			m_BitBoards.blackKing |= static_cast<unsigned long long>(1) << squareIndex;
+			m_BitBoards.blackKing |= m_BitMasks.bitMasks[squareIndex] ;
 			break;
 		}
 
@@ -1175,6 +1175,6 @@ void ChessBoard::SetEnPassantSquaresFromChars(char file, char rank, int& index)
 
 	int squareIndex{ fileIndex + 8 * rankIndex };
 
-	m_EnPassantSquares |= static_cast<unsigned long long>(1) << squareIndex;
+	m_EnPassantSquares |= m_BitMasks.bitMasks[squareIndex] ;
 	index += 1; // The char is in notation "e3" which is 2 characters that have to be checked at the same time
 }

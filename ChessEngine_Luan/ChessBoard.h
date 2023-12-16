@@ -76,6 +76,7 @@ private:
 	const KnightOffsets m_KnightOffsets{};
 	const SlidingOffsets m_SlidingOffsets{};
 
+	const BitMasks m_BitMasks{};
 
 	int MoveGenerationTest(int depth, int initialDepth);
 

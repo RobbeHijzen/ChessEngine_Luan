@@ -183,3 +183,18 @@ struct SlidingOffsets
 
 	std::vector<std::vector<int>> distancesFromEdges;
 };
+
+struct BitMasks
+{
+	BitMasks()
+	{
+		bitMasks.resize(64);
+		for (int index{}; index < 64; ++index)
+		{
+			bitMasks[index] = static_cast<uint64_t>(1) << index;
+		}
+	}
+
+	std::vector<uint64_t> bitMasks;
+
+};

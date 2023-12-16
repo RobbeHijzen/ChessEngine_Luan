@@ -59,7 +59,7 @@ private:
 	// -------------------------
 	// Datamembers
 	// -------------------------
-
+	float m_MoveGenerationTime{};
 	std::unique_ptr<DrawableChessBoard> m_pDrawableChessBoard{};
 
 	bool m_FirstFrameMousePress{ true };
