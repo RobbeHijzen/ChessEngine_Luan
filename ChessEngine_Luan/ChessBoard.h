@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 #include <list>
 #include <stack>
 #include "HelperStructs.h"
@@ -99,13 +100,15 @@ private:
 	int MoveGenerationTest(int depth, int initialDepth);
 
 	void UpdateBitBoards(Move move, uint64_t* startBitBoard);
+	void UpdateThreatMap(Move move, bool useMove = true);
+	void UpdateRayMap(uint64_t checkingPieceMap, int targetSquare);
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
 	void CalculatePossibleMoves(bool originalBoard);
-	void CalculatePawnMoves(int squareIndex, bool onlyThreatMapUpdate = false);
-	void CalculateKnightMoves(int squareIndex, bool onlyThreatMapUpdate = false);
-	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex, bool onlyThreatMapUpdate = false);
-	void CalculateKingMoves(int squareIndex, bool originalBoard = true, bool onlyThreatMapUpdate = false);
+	void CalculatePawnMoves(int squareIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
+	void CalculateKnightMoves(int squareIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
+	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
+	void CalculateKingMoves(int squareIndex, bool originalBoard = true, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
 
 	void CheckForIllegalMoves();
 
