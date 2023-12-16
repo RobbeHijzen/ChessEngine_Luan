@@ -6,7 +6,8 @@
 //-----------------------------------------------------------------
 // Include Files
 //-----------------------------------------------------------------
-#include "ChessEngine.h"																				
+#include "ChessEngine.h"
+#include "Test.h"
 
 //-----------------------------------------------------------------
 // ChessEngine methods																				
@@ -63,7 +64,7 @@ void ChessEngine::Paint(RECT rect)
 
 	m_pDrawableChessBoard->Draw(m_CurrentSelectedSquare, m_InMoveGeneration);
 
-	std::wstring s1{ std::to_wstring(m_MoveGenerationTestAmount) };
+	std::wstring s1{ std::to_wstring(m_pDrawableChessBoard->GetTotalAmount()) };
 	std::wstring s2{ std::to_wstring(m_pDrawableChessBoard->GetCaptureAmount()) };
 	std::wstring s3{ std::to_wstring(m_pDrawableChessBoard->GetEnPassantAmount()) };
 	std::wstring s4{ std::to_wstring(m_pDrawableChessBoard->GetCastleAmount()) };
@@ -78,36 +79,39 @@ void ChessEngine::Paint(RECT rect)
 
 void ChessEngine::Tick()
 {
-	if (m_pDrawableChessBoard->GetFirstFrameGameEnd())
-	{
-		switch (m_pDrawableChessBoard->GetGameProgress())
-		{
-			case GameProgress::Draw:
-			{
-				tstring s{ L"The game has Drawn" };
-				GAME_ENGINE->MessageBox(s);
+	//Amain(0, nullptr);
+	
 
-				break;
-			}
-			case GameProgress::WhiteWon:
-			{
-				tstring s{ L"White Has Won!" };
-				GAME_ENGINE->MessageBox(s);
-
-				break;
-			}
-			case GameProgress::BlackWon:
-			{
-				tstring s{ L"Black Has Won!" };
-				GAME_ENGINE->MessageBox(s);
-
-				break;
-			}
-			default:
-				break;
-		}
-		m_pDrawableChessBoard->SetFirstFrameGameEnd(false);
-	}
+	//if (m_pDrawableChessBoard->GetFirstFrameGameEnd())
+	//{
+	//	switch (m_pDrawableChessBoard->GetGameProgress())
+	//	{
+	//		case GameProgress::Draw:
+	//		{
+	//			tstring s{ L"The game has Drawn" };
+	//			GAME_ENGINE->MessageBox(s);
+	//
+	//			break;
+	//		}
+	//		case GameProgress::WhiteWon:
+	//		{
+	//			tstring s{ L"White Has Won!" };
+	//			GAME_ENGINE->MessageBox(s);
+	//
+	//			break;
+	//		}
+	//		case GameProgress::BlackWon:
+	//		{
+	//			tstring s{ L"Black Has Won!" };
+	//			GAME_ENGINE->MessageBox(s);
+	//
+	//			break;
+	//		}
+	//		default:
+	//			break;
+	//	}
+	//	m_pDrawableChessBoard->SetFirstFrameGameEnd(false);
+	//}
 }
 
 void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPARAM wParam)
@@ -220,7 +224,7 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 		case _T('M'):
 		{
 			m_InMoveGeneration = true;
-			m_MoveGenerationTestAmount = m_pDrawableChessBoard->MoveGenerationTest(3);
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(3);
 			break;
 		}
 	}

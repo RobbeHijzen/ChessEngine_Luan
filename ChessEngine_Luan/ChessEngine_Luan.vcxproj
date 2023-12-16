@@ -149,6 +149,7 @@
     <ClInclude Include="GameWinMain.h" />
     <ClInclude Include="HelperStructs.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Test.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="big.ico" />

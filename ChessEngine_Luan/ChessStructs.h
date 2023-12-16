@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdint.h"
+#include "GameEngine.h"
 #include <list>
 #include <vector>
 
@@ -98,6 +99,8 @@ enum class GameProgress
 
 struct GameState
 {
+	GameProgress gameProgress;
+
 	BitBoards bitBoards;
 	std::list<Move> possibleMoves;
 
@@ -116,10 +119,67 @@ struct GameState
 
 struct KnightOffsets
 {
-	std::vector<int> squareOffsets{ -10, -17, -15, -6, +10, +17, +15, +6 };
-	std::vector<int> leftBounds{ 2, 1, 0, 0, 0, 0, 1, 2 };
-	std::vector<int> northBounds{ 1, 2, 2, 1, 0, 0, 0, 0 };
-	std::vector<int> rightBounds{ 0, 0, 1, 2, 2, 1, 0, 0 };
-	std::vector<int> southBounds{ 0, 0, 0, 0, 1, 2, 2, 1 };
+	const std::vector<int> squareOffsets{ -10, -17, -15, -6, +10, +17, +15, +6 };
+	const std::vector<int> leftBounds{ 2, 1, 0, 0, 0, 0, 1, 2 };
+	const std::vector<int> northBounds{ 1, 2, 2, 1, 0, 0, 0, 0 };
+	const std::vector<int> rightBounds{ 0, 0, 1, 2, 2, 1, 0, 0 };
+	const std::vector<int> southBounds{ 0, 0, 0, 0, 1, 2, 2, 1 };
 };
 
+struct SlidingOffsets
+{
+	SlidingOffsets()
+	{
+		distancesFromEdges.resize(8);
+		for (int index{}; index < 8; ++index)
+		{
+			distancesFromEdges[index].resize(64);
+		}
+
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[0][squareIndex] = squareIndex % 8;
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[1][squareIndex] = squareIndex / 8;
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[2][squareIndex] = 7 - distancesFromEdges[0][squareIndex];
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[3][squareIndex] = 7 - distancesFromEdges[1][squareIndex];
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[4][squareIndex] = min(distancesFromEdges[0][squareIndex], distancesFromEdges[1][squareIndex]);
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[5][squareIndex] = min(distancesFromEdges[2][squareIndex], distancesFromEdges[1][squareIndex]);
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[6][squareIndex] = min(distancesFromEdges[2][squareIndex], distancesFromEdges[3][squareIndex]);
+		}
+
+		for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+		{
+			distancesFromEdges[7][squareIndex] = min(distancesFromEdges[0][squareIndex], distancesFromEdges[3][squareIndex]);
+		}
+	}
+
+
+	const std::vector<int> squareOffsets{-1, -8, +1, +8, -9, -7, +9, +7};
+
+	std::vector<std::vector<int>> distancesFromEdges;
+};

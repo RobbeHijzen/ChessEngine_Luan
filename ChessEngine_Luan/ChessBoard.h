@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <stack>
 #include "HelperStructs.h"
 #include "ChessStructs.h"
 
@@ -18,7 +19,8 @@ public:
 	ChessBoard& operator=(ChessBoard&& other) noexcept = default;
 
 
-	int MoveGenerationTest(int depth);
+	
+	int StartMoveGenerationTest(int depth);
 
 	
 	void MakeMove(Move move, bool originalBoard = true, bool canEndGame = true);
@@ -32,6 +34,7 @@ public:
 
 	std::list<Move> GetPossibleMoves() { return m_PossibleMoves; }
 
+	int GetTotalAmount() { return m_TotalAmount; }
 	int GetCaptureAmount() { return m_CaptureAmount; }
 	int GetEnPassantAmount() { return m_EnPassantAmount; }
 	int GetCastleAmount() { return m_CastleAmount; }
@@ -44,12 +47,14 @@ protected:
 
 private:
 
+	int m_TotalAmount{};
 	int m_CaptureAmount{};
 	int m_EnPassantAmount{};
 	int m_CastleAmount{};
 	int m_PromotionAmount{};
 
 	std::vector<GameState> m_GameStateHistory{};
+	int m_GameStateHistoryCounter{-1};
 
 	GameProgress m_GameProgress{GameProgress::InProgress};
 	bool m_FirstFrameGameEnd{ false };
@@ -69,6 +74,10 @@ private:
 
 
 	const KnightOffsets m_KnightOffsets{};
+	const SlidingOffsets m_SlidingOffsets{};
+
+
+	int MoveGenerationTest(int depth, int initialDepth);
 
 	void UpdateBitBoards(Move move, uint64_t* startBitBoard);
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
@@ -76,14 +85,10 @@ private:
 	void CalculatePossibleMoves(bool originalBoard);
 	void CalculatePawnMoves();
 	void CalculateKnightMoves();
-	void CalculateBishopMoves();
-	void CalculateRookMoves();
-	void CalculateQueenMoves();
 	void CalculateSlidingMoves();
 	void CalculateKingMoves(bool originalBoard = true);
 
 	void CheckForIllegalMoves();
-
 
 
 	void SetBitboardsFromFEN(std::string FEN);
