@@ -105,10 +105,15 @@ private:
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
 	void CalculatePossibleMoves(bool originalBoard);
-	void CalculatePawnMoves(int squareIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
-	void CalculateKnightMoves(int squareIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
-	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
-	void CalculateKingMoves(int squareIndex, bool originalBoard = true, bool onlyThreatMapUpdate = false, uint64_t* customOwnThreatMap = nullptr);
+	void CalculatePawnMoves(int squareIndex);
+	void CalculateKnightMoves(int squareIndex);
+	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex);
+	void CalculateKingMoves(int squareIndex);
+
+	void CalculatePawnThreats(int squareIndex, uint64_t* threatMap);
+	void CalculateKnightThreats(int squareIndex, uint64_t* threatMap);
+	void CalculateSlidingThreats(int squareIndex, uint64_t* threatMap, int startingOffsetIndex, int endOffsetIndex);
+	void CalculateKingThreats(int squareIndex, uint64_t* threatMap);
 
 	void CheckForIllegalMoves();
 
