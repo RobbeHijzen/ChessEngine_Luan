@@ -24,7 +24,7 @@ public:
 	int StartMoveGenerationTest(int depth);
 
 	
-	void MakeMove(Move move, bool isOriginalBoard = true);
+	void MakeMove(Move move);
 	void UnMakeLastMove();
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
@@ -40,6 +40,7 @@ public:
 	int GetEnPassantAmount() { return m_EnPassantAmount; }
 	int GetCastleAmount() { return m_CastleAmount; }
 	int GetPromotionAmount() { return m_PromotionAmount; }
+	int GetCheckAmount() { return m_CheckAmount; }
 
 protected:
 
@@ -53,6 +54,7 @@ private:
 	int m_EnPassantAmount{};
 	int m_CastleAmount{};
 	int m_PromotionAmount{};
+	int m_CheckAmount{};
 
 	std::vector<GameState> m_GameStateHistory{};
 	int m_GameStateHistoryCounter{-1};
@@ -95,6 +97,8 @@ private:
 	uint64_t* m_pCurrentOwnThreatMap{};
 	uint64_t* m_pCurrentOpponentThreatMap{};
 
+	std::vector<uint64_t> m_PinnedBoards{};
+	uint64_t m_CurrentPinBoard{};
 
 
 	int MoveGenerationTest(int depth, int initialDepth);
@@ -102,6 +106,7 @@ private:
 	void UpdateBitBoards(Move move, uint64_t* startBitBoard);
 	void UpdateThreatMap(Move move, bool useMove = true);
 	void UpdateRayMap(uint64_t checkingPieceMap, int targetSquare);
+	void UpdatePinnedBoards();
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
 	void CalculatePossibleMoves();
@@ -115,8 +120,8 @@ private:
 	void CalculateSlidingThreats(int squareIndex, uint64_t* threatMap, int startingOffsetIndex, int endOffsetIndex);
 	void CalculateKingThreats(int squareIndex, uint64_t* threatMap);
 
-	void CheckForIllegalMoves();
-
+	bool CalculateSlidingPins(int squareIndex, uint64_t& pinBoard, int startingOffsetIndex, int endOffsetIndex);
+	void AdjustCurrentPinBoard(int squareIndex);
 
 	void SetBitboardsFromFEN(std::string FEN);
 	void SetPositionFromChar(char c, int& squareIndex);

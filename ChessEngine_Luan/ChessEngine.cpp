@@ -70,14 +70,16 @@ void ChessEngine::Paint(RECT rect)
 	std::wstring s3{ std::to_wstring(m_pDrawableChessBoard->GetEnPassantAmount()) };
 	std::wstring s4{ std::to_wstring(m_pDrawableChessBoard->GetCastleAmount()) };
 	std::wstring s5{ std::to_wstring(m_pDrawableChessBoard->GetPromotionAmount()) };
-	std::wstring s6{ std::to_wstring(m_MoveGenerationTime) };
+	std::wstring s6{ std::to_wstring(m_pDrawableChessBoard->GetCheckAmount()) };
+	std::wstring s7{ std::to_wstring(m_MoveGenerationTime) };
 	GAME_ENGINE->SetFont(m_pFont.get());
 	GAME_ENGINE->DrawString(s1, 100, 100);
 	GAME_ENGINE->DrawString(s2, 100, 150);
 	GAME_ENGINE->DrawString(s3, 100, 200);
 	GAME_ENGINE->DrawString(s4, 100, 250);
 	GAME_ENGINE->DrawString(s5, 100, 300);
-	GAME_ENGINE->DrawString(s6, 100, 400);
+	GAME_ENGINE->DrawString(s6, 100, 350);
+	GAME_ENGINE->DrawString(s7, 100, 450);
 }
 
 void ChessEngine::Tick()
@@ -230,7 +232,7 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 
 			
 			m_InMoveGeneration = true;
-			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(5);
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(4);
 
 			auto now = std::chrono::steady_clock::now();
 			m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;

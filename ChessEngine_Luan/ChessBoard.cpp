@@ -10,14 +10,15 @@ ChessBoard::ChessBoard()
 	m_GameStateHistory.resize(50);
 
 
-	//std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	
 	//std::string FEN{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq 0 0" }; // Position 2	(Depth 3 = 97862)
 	//std::string FEN{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - 0 0" }; // Position 3
 	//std::string FEN{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" }; // Position 4
 	//std::string FEN{ "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8" }; // Position 5
 	//std::string FEN{ "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10" }; // Position 6
 	
-	std::string FEN{ "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1" }; // Illegal ep move #1				Depth : 6 = 1134888		// 
+	//std::string FEN{ "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1" }; // Illegal ep move #1				Depth : 6 = 1134888		// 
 	//std::string FEN{ "8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1" }; // Illegal ep move #2			Depth : 6 = 1015133		// 
 	//std::string FEN{ "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1" }; // EP Capture Checks Opponent	Depth : 6 = 1440467		// 
 	//std::string FEN{ "5k2/8/8/8/8/8/8/4K2R w K - 0 1" }; // Short Castling Gives Check		Depth : 6 = 661072		// 
@@ -68,7 +69,12 @@ int ChessBoard::MoveGenerationTest(int depth, int initialDepth)
 		if (move.moveType == MoveType::BishopPromotion || move.moveType == MoveType::KnightPromotion || move.moveType == MoveType::RookPromotion || move.moveType == MoveType::QueenPromotion || move.moveType == MoveType::BishopPromotionCapture || move.moveType == MoveType::KnightPromotionCapture || move.moveType == MoveType::RookPromotionCapture || move.moveType == MoveType::QueenPromotionCapture)
 			++m_PromotionAmount;
 
+		
+
 		MakeMove(move);
+
+		if (m_IsKingInCheck) ++m_CheckAmount;
+
 		int amount{ MoveGenerationTest(depth - 1, initialDepth) };
 		positionsCounter += amount;
 		if(depth == 1)
@@ -80,7 +86,7 @@ int ChessBoard::MoveGenerationTest(int depth, int initialDepth)
 	return positionsCounter;
 }
 
-void ChessBoard::MakeMove(Move move, bool isOriginalBoard)
+void ChessBoard::MakeMove(Move move)
 {
 	if (m_GameProgress != GameProgress::InProgress) { m_PossibleMoves.clear(); UpdateGameStateHistory(); return; }
 	m_WhiteToMove = !m_WhiteToMove;
@@ -95,8 +101,6 @@ void ChessBoard::MakeMove(Move move, bool isOriginalBoard)
 	
 	UpdateBitBoards(move, startBitBoard);
 	CalculatePossibleMoves();
-	if(isOriginalBoard)
-		//CheckForIllegalMoves();
 	
 	CheckForGameEnd();
 
@@ -127,8 +131,9 @@ void ChessBoard::UnMakeLastMove()
 
 void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 {
-	m_BitBoards.whiteThreatMap = 0;
-	m_BitBoards.blackThreatMap = 0;
+	!m_WhiteToMove ? m_BitBoards.whiteThreatMap = 0 : m_BitBoards.blackThreatMap = 0;
+	
+	
 	
 	switch (move.moveType)
 	{
@@ -304,7 +309,7 @@ void ChessBoard::UpdateBitBoards(Move move, uint64_t* startBitBoard)
 
 	UpdateColorBitboards();
 	UpdateThreatMap(move);
-
+	UpdatePinnedBoards();
 }
 
 void ChessBoard::UpdateThreatMap(Move move, bool useMove)
@@ -426,6 +431,35 @@ void ChessBoard::UpdateRayMap(uint64_t checkingPieceMap, int targetSquare)
 		m_BitBoards.checkRay |= m_BitMasks.bitMasks[targetSquare];
 	}
 }
+void ChessBoard::UpdatePinnedBoards()
+{
+	m_PinnedBoards.clear();
+
+	for (int squareIndex{}; squareIndex < 64; ++squareIndex)
+	{
+		bool shouldUsePinBoard{ false };
+		uint64_t mask{ m_BitMasks.bitMasks[squareIndex] };
+		uint64_t pinBoard{};
+
+		if (m_CurrentBishopsBitBoard & mask)
+		{
+			shouldUsePinBoard = CalculateSlidingPins(squareIndex, pinBoard, 4, 8);
+		}
+		else if (m_CurrentRooksBitBoard & mask)
+		{
+			shouldUsePinBoard = CalculateSlidingPins(squareIndex, pinBoard, 0, 4);
+		}
+		else if (m_CurrentQueensBitBoard & mask)
+		{
+			shouldUsePinBoard = CalculateSlidingPins(squareIndex, pinBoard, 0, 8);
+		}
+
+		if (shouldUsePinBoard)
+		{
+			m_PinnedBoards.push_back(pinBoard);
+		}
+	}
+}
 
 void ChessBoard::CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex)
 {
@@ -522,6 +556,7 @@ void ChessBoard::CalculatePossibleMoves()
 		if (!m_IsKingInDoubleCheck)
 		{
 			uint64_t mask{ m_BitMasks.bitMasks[squareIndex] };
+			AdjustCurrentPinBoard(squareIndex);
 
 			if (m_CurrentPawnsBitBoard & mask)
 				CalculatePawnMoves(squareIndex);
@@ -553,33 +588,38 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 	// If the square in front has nothing (exluding Promotions)
 	{
 		bool onValidRow{ m_WhiteToMove ? squareIndex > 15 : squareIndex < 48 };
-		if (onValidRow &&
-			!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + verticalOffset)] ))
+		if (	onValidRow 
+			&&	!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + verticalOffset)] ))
 		{
-			if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset])))
+			if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset)])
 			{
-				Move move{};
-				move.startSquareIndex = squareIndex;
-				move.targetSquareIndex = squareIndex + verticalOffset;
-				move.moveType = MoveType::QuietMove;
+				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset])))
+				{
+					Move move{};
+					move.startSquareIndex = squareIndex;
+					move.targetSquareIndex = squareIndex + verticalOffset;
+					move.moveType = MoveType::QuietMove;
 
-				m_PossibleMoves.emplace_back(move);
+					m_PossibleMoves.emplace_back(move);
+				}
 			}
-
 
 			// Double Pawn Push
 			bool onValidDoublePushRow{ m_WhiteToMove ? squareIndex > 47 : squareIndex < 16 };
 			if (onValidDoublePushRow &&
 				!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + 2 * verticalOffset)] ))
 			{
-				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + 2 * verticalOffset])))
+				if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + 2 * verticalOffset)])
 				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + 2 * verticalOffset;
-					move.moveType = MoveType::DoublePawnPush;
+					if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + 2 * verticalOffset])))
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + 2 * verticalOffset;
+						move.moveType = MoveType::DoublePawnPush;
 
-					m_PossibleMoves.emplace_back(move);
+						m_PossibleMoves.emplace_back(move);
+					}
 				}
 			}
 
@@ -593,23 +633,26 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 		if (onValidRow &&
 			!((m_BitBoards.whitePieces | m_BitBoards.blackPieces) & m_BitMasks.bitMasks[(squareIndex + verticalOffset)] ))
 		{
-			if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset])))
+			if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset)])
 			{
-				Move move{};
-				move.startSquareIndex = squareIndex;
-				move.targetSquareIndex = squareIndex + verticalOffset;
+				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset])))
+				{
+					Move move{};
+					move.startSquareIndex = squareIndex;
+					move.targetSquareIndex = squareIndex + verticalOffset;
 
-				move.moveType = MoveType::QueenPromotion;
-				m_PossibleMoves.emplace_back(move);
+					move.moveType = MoveType::QueenPromotion;
+					m_PossibleMoves.emplace_back(move);
 
-				move.moveType = MoveType::RookPromotion;
-				m_PossibleMoves.emplace_back(move);
+					move.moveType = MoveType::RookPromotion;
+					m_PossibleMoves.emplace_back(move);
 
-				move.moveType = MoveType::BishopPromotion;
-				m_PossibleMoves.emplace_back(move);
+					move.moveType = MoveType::BishopPromotion;
+					m_PossibleMoves.emplace_back(move);
 
-				move.moveType = MoveType::KnightPromotion;
-				m_PossibleMoves.emplace_back(move);
+					move.moveType = MoveType::KnightPromotion;
+					m_PossibleMoves.emplace_back(move);
+				}
 			}
 		}
 	}
@@ -622,29 +665,32 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 		{
 			if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset - 1)])
 			{
-				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset - 1])))
+				if (m_CurrentPinBoard & m_BitMasks.bitMasks[squareIndex + verticalOffset - 1])
 				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + verticalOffset - 1;
-					if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
+					if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset - 1])))
 					{
-						move.moveType = MoveType::QueenPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + verticalOffset - 1;
+						if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
+						{
+							move.moveType = MoveType::QueenPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::RookPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::RookPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::BishopPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::BishopPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::KnightPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
-					}
-					else
-					{
-						move.moveType = MoveType::Capture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::KnightPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
+						}
+						else
+						{
+							move.moveType = MoveType::Capture;
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 			}
@@ -660,29 +706,32 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 		{
 			if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)])
 			{
-				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset + 1])))
+				if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)])
 				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + verticalOffset + 1;
-					if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
+					if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset + 1])))
 					{
-						move.moveType = MoveType::QueenPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + verticalOffset + 1;
+						if (m_WhiteToMove ? squareIndex < 16 : squareIndex > 47)
+						{
+							move.moveType = MoveType::QueenPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::RookPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::RookPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::BishopPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::BishopPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
 
-						move.moveType = MoveType::KnightPromotionCapture;
-						m_PossibleMoves.emplace_back(move);
-					}
-					else
-					{
-						move.moveType = MoveType::Capture;
-						m_PossibleMoves.emplace_back(move);
+							move.moveType = MoveType::KnightPromotionCapture;
+							m_PossibleMoves.emplace_back(move);
+						}
+						else
+						{
+							move.moveType = MoveType::Capture;
+							m_PossibleMoves.emplace_back(move);
+						}
 					}
 				}
 			}
@@ -697,14 +746,17 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 		if (onValidSquare && 
 			m_EnPassantSquares & m_BitMasks.bitMasks[(squareIndex + verticalOffset - 1)] )
 		{
-			if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset - 1])))
+			if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset - 1)])
 			{
-				Move move{};
-				move.startSquareIndex = squareIndex;
-				move.targetSquareIndex = squareIndex + verticalOffset - 1;
-				move.moveType = MoveType::EnPassantCaptureLeft;
+				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset - 1])))
+				{
+					Move move{};
+					move.startSquareIndex = squareIndex;
+					move.targetSquareIndex = squareIndex + verticalOffset - 1;
+					move.moveType = MoveType::EnPassantCaptureLeft;
 
-				m_PossibleMoves.emplace_back(move);
+					m_PossibleMoves.emplace_back(move);
+				}
 			}
 		}
 	}
@@ -716,14 +768,17 @@ void ChessBoard::CalculatePawnMoves(int squareIndex)
 		if (onValidSquare &&
 			m_EnPassantSquares & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)] )
 		{
-			if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset + 1])))
+			if (m_CurrentPinBoard & m_BitMasks.bitMasks[(squareIndex + verticalOffset + 1)])
 			{
-				Move move{};
-				move.startSquareIndex = squareIndex;
-				move.targetSquareIndex = squareIndex + verticalOffset + 1;
-				move.moveType = MoveType::EnPassantCaptureRight;
+				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + verticalOffset + 1])))
+				{
+					Move move{};
+					move.startSquareIndex = squareIndex;
+					move.targetSquareIndex = squareIndex + verticalOffset + 1;
+					move.moveType = MoveType::EnPassantCaptureRight;
 
-				m_PossibleMoves.emplace_back(move);
+					m_PossibleMoves.emplace_back(move);
+				}
 			}
 		}
 	}
@@ -743,25 +798,28 @@ void ChessBoard::CalculateKnightMoves(int squareIndex)
 
 		if (squareIndex % 8 >= leftBound && squareIndex / 8 >= northBound && squareIndex % 8 <= 7 - rightBound && squareIndex / 8 <= 7 - southBound)
 		{
-			if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[newSquareIndex])))
+			if (m_CurrentPinBoard & m_BitMasks.bitMasks[newSquareIndex])
+			{
+				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[newSquareIndex])))
 				{
-				if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[newSquareIndex])
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = newSquareIndex;
-					move.moveType = MoveType::Capture;
+					if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[newSquareIndex])
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = newSquareIndex;
+						move.moveType = MoveType::Capture;
 
-					m_PossibleMoves.emplace_back(move);
-				}
-				else if (~m_CurrentOwnPiecesBitBoard & m_BitMasks.bitMasks[newSquareIndex])
-				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = newSquareIndex;
-					move.moveType = MoveType::QuietMove;
+						m_PossibleMoves.emplace_back(move);
+					}
+					else if (~m_CurrentOwnPiecesBitBoard & m_BitMasks.bitMasks[newSquareIndex])
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = newSquareIndex;
+						move.moveType = MoveType::QuietMove;
 
-					m_PossibleMoves.emplace_back(move);
+						m_PossibleMoves.emplace_back(move);
+					}
 				}
 			}
 		}
@@ -781,35 +839,37 @@ void ChessBoard::CalculateSlidingMoves(int squareIndex, int startOffsetIndex, in
 			}
 			else if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)] )
 			{
-				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])))
+				if (m_CurrentPinBoard & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])
 				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + currentOffset * multipliedIndex;
-					move.moveType = MoveType::Capture;
+					if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])))
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + currentOffset * multipliedIndex;
+						move.moveType = MoveType::Capture;
 
-					m_PossibleMoves.emplace_back(move);
+						m_PossibleMoves.emplace_back(move);
 
-					break;
+						break;
+					}
 				}
 			}
 			else
 			{
-				if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])))
+				if (m_CurrentPinBoard & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])
 				{
-					Move move{};
-					move.startSquareIndex = squareIndex;
-					move.targetSquareIndex = squareIndex + currentOffset * multipliedIndex;
-					move.moveType = MoveType::QuietMove;
+					if (!(m_IsKingInCheck && !(m_BitBoards.checkRay & m_BitMasks.bitMasks[squareIndex + currentOffset * multipliedIndex])))
+					{
+						Move move{};
+						move.startSquareIndex = squareIndex;
+						move.targetSquareIndex = squareIndex + currentOffset * multipliedIndex;
+						move.moveType = MoveType::QuietMove;
 
-					m_PossibleMoves.emplace_back(move);
+						m_PossibleMoves.emplace_back(move);
+					}
 				}
-				continue;
-				
 			}
 		}
-
-
 	}
 
 	
@@ -854,15 +914,18 @@ void ChessBoard::CalculateKingMoves(int squareIndex)
 	}
 	//---------------
 	//Castling stuff
+	 
+	// If the king is in check, can't castle
+	if (m_IsKingInCheck) return;
+	
 	if (canCastleKingSide)
 	{
-		// If the king is in check, can't castle
-		if (IsSquareInCheckByOtherColor(squareIndex)) return;
+		
 
 		if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex + 2)]) &&
 			!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex + 1)] ))
 		{
-			if (!IsSquareInCheckByOtherColor(squareIndex + 1))
+			if (!IsSquareInCheckByOtherColor(squareIndex + 1) && !IsSquareInCheckByOtherColor(squareIndex + 2))
 			{
 				Move move{};
 				move.startSquareIndex = squareIndex;
@@ -875,15 +938,11 @@ void ChessBoard::CalculateKingMoves(int squareIndex)
 	}
 	if (canCastleQueenSide)
 	{
-		// If the king is in check, can't castle
-		if (IsSquareInCheckByOtherColor(squareIndex)) return;
-
-
 		if (!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 1)] ) &&
 			!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 2)] ) &&
 			!((m_BitBoards.blackPieces | m_BitBoards.whitePieces) & m_BitMasks.bitMasks[(squareIndex - 3)] ))
 		{
-			if (!IsSquareInCheckByOtherColor(squareIndex - 1))
+			if (!IsSquareInCheckByOtherColor(squareIndex - 1) && !IsSquareInCheckByOtherColor(squareIndex - 2))
 			{
 				Move move{};
 				move.startSquareIndex = squareIndex;
@@ -932,8 +991,6 @@ void ChessBoard::CalculateSlidingThreats(int squareIndex, uint64_t* threatMap, i
 
 	for (int directionIndex{ startingOffsetIndex }; directionIndex < endOffsetIndex; ++directionIndex)
 	{
-		bool hitKing{ false };
-
 		for (int multipliedIndex{ 1 }; multipliedIndex <= m_SlidingOffsets.distancesFromEdges[directionIndex][squareIndex]; ++multipliedIndex)
 		{
 			int currentOffset{ m_SlidingOffsets.squareOffsets[directionIndex] };
@@ -977,31 +1034,71 @@ void ChessBoard::CalculateKingThreats(int squareIndex, uint64_t* threatMap)
 	}
 }
 
-
-
-void ChessBoard::CheckForIllegalMoves()
+bool ChessBoard::CalculateSlidingPins(int squareIndex, uint64_t& pinBoard, int startingOffsetIndex, int endOffsetIndex)
 {
-	std::vector<std::list<Move>::iterator> illegalIterators{};
-	std::list<Move>::iterator it{};
-	it = m_PossibleMoves.begin();
-	//for (auto it{m_PossibleMoves.begin()}; it != m_PossibleMoves.end(); ++it)
-	while(it != m_PossibleMoves.end())
-	{
-		MakeMove(*it, false);
+	uint64_t kingBitBoard{ m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing };
+	int kingSquare{ int(std::log2(kingBitBoard) + 0.5) };
+
 	
-		if (IsOtherKingInCheck())
+
+	for (int directionIndex{ startingOffsetIndex }; directionIndex < endOffsetIndex; ++directionIndex)
+	{
+		int amountOfEnemiesInTheWay{};
+
+		for (int multipliedIndex{ 1 }; multipliedIndex <= m_SlidingOffsets.distancesFromEdges[directionIndex][squareIndex]; ++multipliedIndex)
 		{
-			illegalIterators.emplace_back(it);
+			int currentOffset{ m_SlidingOffsets.squareOffsets[directionIndex] };
+
+			pinBoard |= m_BitMasks.bitMasks[squareIndex + currentOffset * (multipliedIndex - 1)];
+
+			// Own pieces
+			if (m_CurrentOwnPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)])
+			{
+				break;
+			}
+			// Enemy king
+			else if ((m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing) & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)])
+			{
+				if (amountOfEnemiesInTheWay == 1)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			// any other Enemy Piece
+			else if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + currentOffset * multipliedIndex)])
+			{
+				++amountOfEnemiesInTheWay;
+				continue;
+			}
+			// nothing
+			else
+			{
+				continue;
+			}
 		}
-		UnMakeLastMove();
-		std::advance(it, 1);
+
+
 	}
-	
-	for (auto& it : illegalIterators)
-	{
-		m_PossibleMoves.erase(it);
-	}
+	return false;
 }
+void ChessBoard::AdjustCurrentPinBoard(int squareIndex)
+{
+	for (auto pinBoard : m_PinnedBoards)
+	{
+		if (pinBoard & m_BitMasks.bitMasks[squareIndex])
+		{
+			m_CurrentPinBoard = pinBoard;
+			return;
+		}
+	}
+	m_CurrentPinBoard = ~0;
+}
+
+
 bool ChessBoard::IsOtherKingInCheck()
 {
 	uint64_t kingBitBoard{m_WhiteToMove ? m_BitBoards.blackKing : m_BitBoards.whiteKing };
