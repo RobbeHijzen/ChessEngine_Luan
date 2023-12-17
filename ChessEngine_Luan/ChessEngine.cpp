@@ -230,7 +230,7 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 
 			
 			m_InMoveGeneration = true;
-			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(4);
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(5);
 
 			auto now = std::chrono::steady_clock::now();
 			m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;

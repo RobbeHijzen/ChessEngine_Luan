@@ -24,7 +24,7 @@ public:
 	int StartMoveGenerationTest(int depth);
 
 	
-	void MakeMove(Move move, bool originalBoard = true, bool canEndGame = true);
+	void MakeMove(Move move, bool isOriginalBoard = true);
 	void UnMakeLastMove();
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
@@ -104,7 +104,7 @@ private:
 	void UpdateRayMap(uint64_t checkingPieceMap, int targetSquare);
 	void CheckCastleRights(uint64_t startSquareBitBoard, int startSquareIndex);
 
-	void CalculatePossibleMoves(bool originalBoard);
+	void CalculatePossibleMoves();
 	void CalculatePawnMoves(int squareIndex);
 	void CalculateKnightMoves(int squareIndex);
 	void CalculateSlidingMoves(int squareIndex, int startOffsetIndex, int endOffsetIndex);
