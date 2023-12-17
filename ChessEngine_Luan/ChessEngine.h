@@ -17,6 +17,8 @@
 
 #include "ChessBoard.h"
 #include "DrawableChessBoard.h"
+#include "ChessAI.h"
+#include "ChessAI_Versions.h"
 
 //-----------------------------------------------------------------
 // ChessEngine Class																
@@ -70,6 +72,15 @@ private:
 	int m_MoveGenerationTestAmount{};
 	bool m_InMoveGeneration{ false };
 
+
+	bool m_GameHasEnded{ false };
+	bool m_GameIsPaused{ true };
+	bool m_MakeNextMove{ false };
+
+	std::unique_ptr<ChessAI> m_pChessAI_White{};
+	std::unique_ptr<ChessAI> m_pChessAI_Black{};
+
+	void HandleGameEnd();
 	int GetIndexFromPosition(Point2i position);
 };
 

@@ -30,8 +30,6 @@ public:
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
 	GameProgress GetGameProgress() { return m_GameProgress; }
-	bool GetFirstFrameGameEnd() { return m_FirstFrameGameEnd; }
-	void SetFirstFrameGameEnd(bool isFirstFrameGameEnd) { m_FirstFrameGameEnd = isFirstFrameGameEnd; }
 
 	std::list<Move> GetPossibleMoves() { return m_PossibleMoves; }
 
@@ -41,6 +39,9 @@ public:
 	int GetCastleAmount() { return m_CastleAmount; }
 	int GetPromotionAmount() { return m_PromotionAmount; }
 	int GetCheckAmount() { return m_CheckAmount; }
+
+	bool GetWhiteToMove() { return m_WhiteToMove; }
+	GameState GetCurrentGameState() { return m_GameStateHistory[m_GameStateHistoryCounter]; }
 
 protected:
 
@@ -60,7 +61,6 @@ private:
 	int m_GameStateHistoryCounter{-1};
 
 	GameProgress m_GameProgress{GameProgress::InProgress};
-	bool m_FirstFrameGameEnd{ false };
 
 	bool m_WhiteToMove{ true };
 	bool m_IsKingInCheck{ false };

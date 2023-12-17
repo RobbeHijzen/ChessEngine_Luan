@@ -132,6 +132,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AbstractGame.cpp" />
+    <ClCompile Include="ChessAI.cpp" />
+    <ClCompile Include="ChessAI_Versions.cpp" />
     <ClCompile Include="ChessBoard.cpp" />
     <ClCompile Include="ChessEngine.cpp" />
     <ClCompile Include="DrawableChessBoard.cpp" />
@@ -140,6 +142,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractGame.h" />
+    <ClInclude Include="ChessAI.h" />
+    <ClInclude Include="ChessAI_Versions.h" />
     <ClInclude Include="ChessBoard.h" />
     <ClInclude Include="ChessEngine.h" />
     <ClInclude Include="ChessStructs.h" />

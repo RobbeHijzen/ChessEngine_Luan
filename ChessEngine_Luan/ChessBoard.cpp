@@ -7,10 +7,12 @@
 ChessBoard::ChessBoard()
 {
 	//m_PossibleMoves.resize(218);
-	m_GameStateHistory.resize(50);
+	m_GameStateHistory.resize(500); // 269 is longest tournament game played, but for search reasons I use 500
 
 
 	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	//std::string FEN{ "8/8/8/8/8/8/8/8 w - - 0 1" };
+	//std::string FEN{ "7k/8/5p2/8/4K3/R7/8/8 b - - 0 1" };
 	
 	//std::string FEN{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq 0 0" }; // Position 2	(Depth 3 = 97862)
 	//std::string FEN{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - 0 0" }; // Position 3
@@ -850,9 +852,9 @@ void ChessBoard::CalculateSlidingMoves(int squareIndex, int startOffsetIndex, in
 
 						m_PossibleMoves.emplace_back(move);
 
-						break;
 					}
 				}
+				break;
 			}
 			else
 			{
@@ -957,7 +959,7 @@ void ChessBoard::CalculateKingMoves(int squareIndex)
 
 void ChessBoard::CalculatePawnThreats(int squareIndex, uint64_t* threatMap)
 {
-	int verticalOffset{ m_WhiteToMove ? -8 : 8 };
+	int verticalOffset{ m_WhiteToMove ? 8 : -8 };
 
 	if (squareIndex % 8 != 0)
 	{
@@ -1124,17 +1126,30 @@ bool ChessBoard::IsSquareInCheckByOtherColor(int squareIndex)
 
 void ChessBoard::CheckForGameEnd()
 {
-	//CheckForCheckmate();
-	//CheckForFiftyMoveRule();
-	//CheckForInsufficientMaterial();
+	CheckForCheckmate();
+	CheckForFiftyMoveRule();
+	CheckForInsufficientMaterial();
 	//CheckForRepetition();
 }
 void ChessBoard::CheckForCheckmate()
 {
 	if (m_PossibleMoves.size() == 0)
 	{
-		m_GameProgress = GameProgress::Draw;
-		m_FirstFrameGameEnd = true;
+		if (m_IsKingInCheck)
+		{
+			if (m_WhiteToMove)
+			{
+				m_GameProgress = GameProgress::BlackWon;
+			}
+			else
+			{
+				m_GameProgress = GameProgress::WhiteWon;
+			}
+		}
+		else
+		{
+			m_GameProgress = GameProgress::Draw;
+		}
 	}
 }
 void ChessBoard::CheckForFiftyMoveRule()
@@ -1142,8 +1157,6 @@ void ChessBoard::CheckForFiftyMoveRule()
 	if (m_HalfMoveClock >= 50)
 	{
 		m_GameProgress = GameProgress::Draw;
-
-		m_FirstFrameGameEnd = true;
 	}
 
 }
@@ -1212,7 +1225,6 @@ void ChessBoard::CheckForInsufficientMaterial()
 	if (insufficientMaterial)
 	{
 		m_GameProgress = GameProgress::Draw;
-		m_FirstFrameGameEnd = true;
 	}
 }
 int ChessBoard::GetAmountOfPiecesFromBitBoard(uint64_t bitBoard)
@@ -1238,7 +1250,6 @@ void ChessBoard::CheckForRepetition()
 	if (amountOfCurrentApearences >= 2)
 	{
 		m_GameProgress = GameProgress::Draw;
-		m_FirstFrameGameEnd = true;
 	}
 
 }

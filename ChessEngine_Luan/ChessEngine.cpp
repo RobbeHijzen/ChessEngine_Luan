@@ -7,16 +7,17 @@
 // Include Files
 //-----------------------------------------------------------------
 #include "ChessEngine.h"
-#include "Test.h"
 #include <chrono>
 
 //-----------------------------------------------------------------
 // ChessEngine methods																				
 //-----------------------------------------------------------------
 
-ChessEngine::ChessEngine() 																	
+ChessEngine::ChessEngine()
 {
 	// nothing to create
+
+	
 }
 
 ChessEngine::~ChessEngine()																						
@@ -34,18 +35,22 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	// Set the optional values
 	GAME_ENGINE->SetWidth(1440);
 	GAME_ENGINE->SetHeight(810);
-    GAME_ENGINE->SetFrameRate(10000000);
+    GAME_ENGINE->SetFrameRate(1000);
 
 	// Set the keys that the game needs to listen to
 	tstringstream buffer;
-	buffer << _T("ZM");
+	buffer << _T("ZMPR");
 	//buffer << _T("KLMO");
 	//buffer << (TCHAR) VK_LEFT;
 	//buffer << (TCHAR) VK_RIGHT;
 	GAME_ENGINE->SetKeyList(buffer.str());
 
-	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
+	
 	m_pFont = std::make_unique<Font>(L"Arial", true, false, false, 50);
+
+	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
+	m_pChessAI_White = std::make_unique<ChessAI_V2>(m_pDrawableChessBoard.get(), true);
+	m_pChessAI_Black = std::make_unique<ChessAI_V1>(m_pDrawableChessBoard.get(), false);
 }
 
 void ChessEngine::Start()
@@ -84,39 +89,28 @@ void ChessEngine::Paint(RECT rect)
 
 void ChessEngine::Tick()
 {
-	//Amain(0, nullptr);
-	
+	if(!m_GameHasEnded)
+	{
+		HandleGameEnd();
 
-	//if (m_pDrawableChessBoard->GetFirstFrameGameEnd())
-	//{
-	//	switch (m_pDrawableChessBoard->GetGameProgress())
-	//	{
-	//		case GameProgress::Draw:
-	//		{
-	//			tstring s{ L"The game has Drawn" };
-	//			GAME_ENGINE->MessageBox(s);
-	//
-	//			break;
-	//		}
-	//		case GameProgress::WhiteWon:
-	//		{
-	//			tstring s{ L"White Has Won!" };
-	//			GAME_ENGINE->MessageBox(s);
-	//
-	//			break;
-	//		}
-	//		case GameProgress::BlackWon:
-	//		{
-	//			tstring s{ L"Black Has Won!" };
-	//			GAME_ENGINE->MessageBox(s);
-	//
-	//			break;
-	//		}
-	//		default:
-	//			break;
-	//	}
-	//	m_pDrawableChessBoard->SetFirstFrameGameEnd(false);
-	//}
+		if (!m_GameHasEnded)
+		{
+			if (!m_GameIsPaused || m_MakeNextMove)
+			{
+				m_MakeNextMove = false;
+
+				if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
+				{
+					m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
+				}
+				else if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
+				{
+					m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
+				}
+			}
+		}
+	}
+	
 }
 
 void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPARAM wParam)
@@ -126,6 +120,7 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 	// Example:
 	if (isLeft == true && isDown == true && m_FirstFrameMousePress) // is it a left mouse click?
 	{	
+		
 		if (!m_HasASquareSelected)
 		{
 			m_FirstFrameMousePress = false;
@@ -156,8 +151,6 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 	}
 	
 }
-
-
 void ChessEngine::MouseWheelAction(int x, int y, int distance, WPARAM wParam)
 {	
 	// Insert the code that needs to be executed when the game registers a mouse wheel action
@@ -177,7 +170,6 @@ void ChessEngine::MouseMove(int x, int y, WPARAM wParam)
 	}
 	*/
 }
-
 void ChessEngine::CheckKeyboard()
 {	
 	// Here you can check if a key of choice is held down
@@ -190,7 +182,6 @@ void ChessEngine::CheckKeyboard()
 	if (GAME_ENGINE->IsKeyDown(_T('O'))) yIcon -= ySpeed;
 	*/
 }
-
 void ChessEngine::KeyPressed(TCHAR cKey)
 {	
 	// DO NOT FORGET to use SetKeyList() !!
@@ -218,9 +209,19 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 		GAME_ENGINE->MessageBox(_T("Escape menu."));
 	}
 	*/
-	
+
 	switch (cKey)
 	{
+		case _T('P'):
+		{
+			m_GameIsPaused = !m_GameIsPaused;
+			break;
+		}
+		case _T('R'):
+		{
+			m_MakeNextMove = true;
+			break;
+		}
 		case _T('Z'):
 		{
 			m_pDrawableChessBoard->UnMakeLastMove();
@@ -232,7 +233,7 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 
 			
 			m_InMoveGeneration = true;
-			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(4);
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(3);
 
 			auto now = std::chrono::steady_clock::now();
 			m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
@@ -241,10 +242,45 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 		}
 	}
 }
-
 void ChessEngine::CallAction(Caller* callerPtr)
 {
 	// Insert the code that needs to be executed when a Caller has to perform an action
+}
+
+void ChessEngine::HandleGameEnd()
+{
+	switch (m_pDrawableChessBoard->GetGameProgress())
+	{
+	case GameProgress::Draw:
+	{
+		m_GameHasEnded = true;
+
+		tstring s{ L"The game has Drawn" };
+		GAME_ENGINE->MessageBox(s);
+
+		break;
+	}
+	case GameProgress::WhiteWon:
+	{
+		m_GameHasEnded = true;
+
+		tstring s{ L"White Has Won!" };
+		GAME_ENGINE->MessageBox(s);
+
+		break;
+	}
+	case GameProgress::BlackWon:
+	{
+		m_GameHasEnded = true;
+
+		tstring s{ L"Black Has Won!" };
+		GAME_ENGINE->MessageBox(s);
+
+		break;
+	}
+	default:
+		break;
+	}	
 }
 
 int ChessEngine::GetIndexFromPosition(Point2i position)
