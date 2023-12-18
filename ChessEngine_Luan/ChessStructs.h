@@ -65,6 +65,8 @@ enum class FENFields
 
 enum class MoveType
 {
+	NullMove,
+
 	QuietMove,
 	DoublePawnPush,
 	KingCastle,
@@ -90,7 +92,7 @@ struct Move
 	int startSquareIndex{};
 	int targetSquareIndex{};
 
-	MoveType moveType{MoveType::QuietMove};
+	MoveType moveType{MoveType::NullMove};
 
 	bool operator==(Move other)
 	{

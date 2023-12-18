@@ -14,12 +14,13 @@ public:
 
 
 	virtual Move GetAIMove() = 0;
-	virtual int BoardValueEvaluation() { return 0; };
 	bool IsControllingWhite() { return m_ControllingWhite; }
 
 protected:
 
 	ChessBoard* m_pChessBoard;
 	bool m_ControllingWhite;
+
+	virtual float BoardValueEvaluation(GameState gameState) { return 0.f; };
 };
 

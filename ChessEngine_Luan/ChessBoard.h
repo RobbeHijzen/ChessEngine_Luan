@@ -25,7 +25,7 @@ public:
 
 	
 	void MakeMove(Move move);
-	void UnMakeLastMove();
+	void UnMakeLastMove(int customDepth = 1);
 	bool IsLegalMove(Move move);
 	Move GetMoveFromSquares(int startSquare, int targetSquare);
 
@@ -42,6 +42,7 @@ public:
 
 	bool GetWhiteToMove() { return m_WhiteToMove; }
 	GameState GetCurrentGameState() { return m_GameStateHistory[m_GameStateHistoryCounter]; }
+	int GetFullMoveCounter() { return m_FullMoveCounter; }
 
 protected:
 

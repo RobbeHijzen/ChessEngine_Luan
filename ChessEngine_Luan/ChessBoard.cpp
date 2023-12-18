@@ -7,16 +7,16 @@
 ChessBoard::ChessBoard()
 {
 	//m_PossibleMoves.resize(218);
-	m_GameStateHistory.resize(500); // 269 is longest tournament game played, but for search reasons I use 500
+	m_GameStateHistory.resize(5000); // 269 is longest tournament game played, but for search reasons I use 500
 
 
-	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	//std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
 	//std::string FEN{ "8/8/8/8/8/8/8/8 w - - 0 1" };
 	//std::string FEN{ "7k/8/5p2/8/4K3/R7/8/8 b - - 0 1" };
 	
 	//std::string FEN{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq 0 0" }; // Position 2	(Depth 3 = 97862)
 	//std::string FEN{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - 0 0" }; // Position 3
-	//std::string FEN{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" }; // Position 4
+	std::string FEN{ "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" }; // Position 4
 	//std::string FEN{ "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8" }; // Position 5
 	//std::string FEN{ "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10" }; // Position 6
 	
@@ -42,6 +42,7 @@ ChessBoard::ChessBoard()
 
 	UpdateGameStateHistory();
 }
+
 int ChessBoard::StartMoveGenerationTest(int depth)
 {
 	m_TotalAmount = 0;
@@ -90,6 +91,7 @@ int ChessBoard::MoveGenerationTest(int depth, int initialDepth)
 
 void ChessBoard::MakeMove(Move move)
 {
+	if (move.moveType == MoveType::NullMove) return;
 	if (m_GameProgress != GameProgress::InProgress) { m_PossibleMoves.clear(); UpdateGameStateHistory(); return; }
 	m_WhiteToMove = !m_WhiteToMove;
 
@@ -108,10 +110,11 @@ void ChessBoard::MakeMove(Move move)
 
 	UpdateGameStateHistory();
 }
-void ChessBoard::UnMakeLastMove()
+void ChessBoard::UnMakeLastMove(int customDepth)
 {
-
-	GameState gameState = m_GameStateHistory[--m_GameStateHistoryCounter];
+	if (m_GameStateHistoryCounter - customDepth < 0) return;
+	m_GameStateHistoryCounter -= customDepth;
+	GameState gameState = m_GameStateHistory[m_GameStateHistoryCounter];
 
 	m_GameProgress = gameState.gameProgress;
 

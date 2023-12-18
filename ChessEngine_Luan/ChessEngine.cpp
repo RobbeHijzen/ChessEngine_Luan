@@ -49,8 +49,8 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	m_pFont = std::make_unique<Font>(L"Arial", true, false, false, 50);
 
 	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
-	m_pChessAI_White = std::make_unique<ChessAI_V2_AlphaBeta>(m_pDrawableChessBoard.get(), true);
-	m_pChessAI_Black = std::make_unique<ChessAI_V1>(m_pDrawableChessBoard.get(), false);
+	m_pChessAI_White = std::make_unique<ChessAI_V1_AlphaBeta>(m_pDrawableChessBoard.get(), true);
+	m_pChessAI_Black = std::make_unique<ChessAI_V1_MCST>(m_pDrawableChessBoard.get(), false);
 }
 
 void ChessEngine::Start()
@@ -85,6 +85,7 @@ void ChessEngine::Paint(RECT rect)
 	GAME_ENGINE->DrawString(s5, 100, 300);
 	GAME_ENGINE->DrawString(s6, 100, 350);
 	GAME_ENGINE->DrawString(s7, 100, 450);
+
 }
 
 void ChessEngine::Tick()
