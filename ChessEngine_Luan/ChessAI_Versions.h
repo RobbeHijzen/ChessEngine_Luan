@@ -18,22 +18,39 @@ public:
 
 };
 
-class ChessAI_V2 final : public ChessAI
+class ChessAI_V2_AlphaBeta final : public ChessAI
 {
 public:
-	ChessAI_V2(ChessBoard* chessBoard, bool controllingWhite) : ChessAI(chessBoard, controllingWhite) {};
-	~ChessAI_V2() = default;
+	ChessAI_V2_AlphaBeta(ChessBoard* chessBoard, bool controllingWhite) : ChessAI(chessBoard, controllingWhite) {};
+	~ChessAI_V2_AlphaBeta() = default;
 
-	ChessAI_V2(const ChessAI_V2& other) = delete;
-	ChessAI_V2(ChessAI_V2&& other) = delete;
-	ChessAI_V2& operator=(const ChessAI_V2& other) = delete;
-	ChessAI_V2& operator=(ChessAI_V2&& other) noexcept = delete;
+	ChessAI_V2_AlphaBeta(const ChessAI_V2_AlphaBeta& other) = delete;
+	ChessAI_V2_AlphaBeta(ChessAI_V2_AlphaBeta&& other) = delete;
+	ChessAI_V2_AlphaBeta& operator=(const ChessAI_V2_AlphaBeta& other) = delete;
+	ChessAI_V2_AlphaBeta& operator=(ChessAI_V2_AlphaBeta&& other) noexcept = delete;
 
 
 	virtual Move GetAIMove() override;
 	virtual int BoardValueEvaluation() override;
 
-	int DepthSearch(int depth);
+	int DepthSearch(int depth, int alpha, int beta);
 };
 
+class ChessAI_V2_MCST final : public ChessAI
+{
+public:
+	ChessAI_V2_MCST(ChessBoard* chessBoard, bool controllingWhite) : ChessAI(chessBoard, controllingWhite) {};
+	~ChessAI_V2_MCST() = default;
+
+	ChessAI_V2_MCST(const ChessAI_V2_MCST& other) = delete;
+	ChessAI_V2_MCST(ChessAI_V2_MCST&& other) = delete;
+	ChessAI_V2_MCST& operator=(const ChessAI_V2_MCST& other) = delete;
+	ChessAI_V2_MCST& operator=(ChessAI_V2_MCST&& other) noexcept = delete;
+
+
+	virtual Move GetAIMove() override;
+	virtual int BoardValueEvaluation() override;
+
+	int DepthSearch();
+};
 

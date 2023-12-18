@@ -49,7 +49,7 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	m_pFont = std::make_unique<Font>(L"Arial", true, false, false, 50);
 
 	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
-	m_pChessAI_White = std::make_unique<ChessAI_V2>(m_pDrawableChessBoard.get(), true);
+	m_pChessAI_White = std::make_unique<ChessAI_V2_AlphaBeta>(m_pDrawableChessBoard.get(), true);
 	m_pChessAI_Black = std::make_unique<ChessAI_V1>(m_pDrawableChessBoard.get(), false);
 }
 
@@ -101,11 +101,23 @@ void ChessEngine::Tick()
 
 				if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
 				{
+					auto lastUpdate{ std::chrono::steady_clock::now() };
+
 					m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
+					
+					auto now = std::chrono::steady_clock::now();
+					m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+					lastUpdate = now;
 				}
 				else if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
 				{
+					auto lastUpdate{ std::chrono::steady_clock::now() };
+
 					m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
+
+					auto now = std::chrono::steady_clock::now();
+					m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+					lastUpdate = now;
 				}
 			}
 		}
