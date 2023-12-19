@@ -14,11 +14,15 @@ Move ChessAI_V0::GetAIMove()
 	return *it;
 }
 
+#pragma region AlphaBeta
+
+#pragma region V1
 Move ChessAI_V1_AlphaBeta::GetAIMove()
 {
 	int depth{ 3 };
 
 	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
+	if (possibleMoves.size() == 1) return possibleMoves.front();
 	Move currentBestMove{};
 	float currentBestValue{FLOAT_MIN};
 
@@ -132,7 +136,153 @@ float ChessAI_V1_AlphaBeta::BoardValueEvaluation(GameState gameState)
 
 	return m_ControllingWhite ? whiteValue - blackValue : blackValue - whiteValue;
 }
+#pragma endregion
 
+#pragma region V2
+Move ChessAI_V2_AlphaBeta::GetAIMove()
+{
+	int depth{ 4 };
+
+	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
+	if (possibleMoves.size() == 1) return possibleMoves.front();
+	Move currentBestMove{};
+	float currentBestValue{ FLOAT_MIN };
+
+	float alpha{ FLOAT_MIN };
+	float beta{ FLOAT_MAX };
+
+	for (int index{}; index < possibleMoves.size(); ++index)
+	{
+
+		auto it{ possibleMoves.begin() };
+		std::advance(it, index);
+		Move move{ *it };
+
+		m_pChessBoard->MakeMove(move);
+
+		float moveValue{ DepthSearch(depth - 1, alpha, beta) };
+		if (moveValue > currentBestValue) { currentBestMove = move; currentBestValue = moveValue; }
+
+		m_pChessBoard->UnMakeLastMove();
+	}
+
+	return currentBestMove;
+}
+float ChessAI_V2_AlphaBeta::DepthSearch(int depth, float alpha, float beta)
+{
+	bool isMinimizer{ !bool(depth & 1) };
+
+	if (depth == 0) return BoardValueEvaluation(m_pChessBoard->GetCurrentGameState());
+
+	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
+	float currentMoveValue{ isMinimizer ? FLOAT_MAX : FLOAT_MIN };
+
+	for (const auto& move : possibleMoves)
+	{
+		m_pChessBoard->MakeMove(move);
+		float moveValue{ DepthSearch(depth - 1, alpha, beta) };
+		m_pChessBoard->UnMakeLastMove();
+
+		if (!isMinimizer)
+		{
+			currentMoveValue = max(currentMoveValue, moveValue);
+			if (currentMoveValue > beta)
+				break;
+
+			alpha = max(alpha, currentMoveValue);
+		}
+		else
+		{
+			currentMoveValue = min(currentMoveValue, moveValue);
+			if (currentMoveValue < alpha)
+				break;
+
+			beta = min(beta, currentMoveValue);
+		}
+
+	}
+
+	return currentMoveValue;
+}
+float ChessAI_V2_AlphaBeta::BoardValueEvaluation(GameState gameState)
+{
+	switch (gameState.gameProgress){
+		case GameProgress::Draw: return 0;
+		case GameProgress::WhiteWon: return m_ControllingWhite ? FLOAT_MAX - 100.f : FLOAT_MIN + 100.f;
+		case GameProgress::BlackWon: return m_ControllingWhite ? FLOAT_MIN + 100.f : FLOAT_MAX - 100.f;
+		default: break; }
+
+
+	float boardValue{};
+	boardValue = MaterialBalance(gameState) +
+				 MoveBalance(gameState);
+
+	
+
+	return m_ControllingWhite ? boardValue : -boardValue;
+}
+float ChessAI_V2_AlphaBeta::MaterialBalance(GameState gameState)
+{
+	int K{ AmountOfPieces(gameState.bitBoards.whiteKing) };
+	int Q{ AmountOfPieces(gameState.bitBoards.whiteQueens) };
+	int R{ AmountOfPieces(gameState.bitBoards.whiteRooks) };
+	int B{ AmountOfPieces(gameState.bitBoards.whiteBishops) };
+	int N{ AmountOfPieces(gameState.bitBoards.whiteKnights) };
+	int P{ AmountOfPieces(gameState.bitBoards.whitePawns) };
+	
+	int k{ AmountOfPieces(gameState.bitBoards.blackKing) };
+	int q{ AmountOfPieces(gameState.bitBoards.blackQueens) };
+	int r{ AmountOfPieces(gameState.bitBoards.blackRooks) };
+	int b{ AmountOfPieces(gameState.bitBoards.blackBishops) };
+	int n{ AmountOfPieces(gameState.bitBoards.blackKnights) };
+	int p{ AmountOfPieces(gameState.bitBoards.blackPawns) };
+	
+	int totalPieceAmount{ K + Q + R + B + N + P + k + q + r + b + n + p};
+	float gameStagePercent{totalPieceAmount / 32.f};
+
+	float value{};
+	for (int index{}; index < 64; ++index)
+	{
+		uint64_t mask{ static_cast<unsigned long long>(1) << index };
+
+		if		(mask & gameState.bitBoards.whitePawns)   value += m_PieceTables.pawnStartBlack[ 63 - index]	* gameStagePercent + m_PieceTables.pawnEndBlack[63 - index]		* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.whiteKnights) value += m_PieceTables.knightStartBlack[63 - index]	* gameStagePercent + m_PieceTables.knightEndBlack[63 - index]	* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.whiteBishops) value += m_PieceTables.bishopStartBlack[63 - index]	* gameStagePercent + m_PieceTables.bishopEndBlack[63 - index]	* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.whiteRooks)	  value += m_PieceTables.rookStartBlack[63 - index]		* gameStagePercent + m_PieceTables.rookEndBlack[63 - index]		* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.whiteQueens)  value += m_PieceTables.queenStartBlack[63 - index]	* gameStagePercent + m_PieceTables.queenEndBlack[63 - index]	* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.whiteKing)	  value += m_PieceTables.kingStartBlack[63 - index]		* gameStagePercent + m_PieceTables.kingEndBlack[63 - index]		* (1 - gameStagePercent);
+
+
+		else if (mask & gameState.bitBoards.blackPawns)   value -= m_PieceTables.pawnStartBlack[index]		* gameStagePercent + m_PieceTables.pawnEndBlack[index]		* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.blackKnights) value -= m_PieceTables.knightStartBlack[index]	* gameStagePercent + m_PieceTables.knightEndBlack[index]	* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.blackBishops) value -= m_PieceTables.bishopStartBlack[index]	* gameStagePercent + m_PieceTables.bishopEndBlack[index]	* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.blackRooks)   value -= m_PieceTables.rookStartBlack[index]		* gameStagePercent + m_PieceTables.rookEndBlack[index]		* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.blackQueens)  value -= m_PieceTables.queenStartBlack[index]		* gameStagePercent + m_PieceTables.queenEndBlack[index]		* (1 - gameStagePercent);
+		else if (mask & gameState.bitBoards.blackKing)    value -= m_PieceTables.kingStartBlack[index]		* gameStagePercent + m_PieceTables.kingEndBlack[index]		* (1 - gameStagePercent);
+	}
+
+	return value;
+}
+float ChessAI_V2_AlphaBeta::MoveBalance(GameState gameState)
+{
+	float amount{ float(gameState.possibleMoves.size()) - m_MoveAmountOffset };
+	return m_MoveAmountValue * (gameState.whiteToMove ? amount : -amount );
+}
+int ChessAI_V2_AlphaBeta::AmountOfPieces(uint64_t bitBoard)
+{
+	int amount{};
+	for (int index{}; index < 64; ++index)
+	{
+		if (bitBoard & (static_cast<unsigned long long>(1) << index)) ++amount;
+	}
+	return amount;
+}
+#pragma endregion
+
+#pragma endregion
+
+
+#pragma region Monte Carlo Search Tree
 
 Move ChessAI_V1_MCST::GetAIMove()
 {
@@ -325,3 +475,5 @@ void ChessAI_V1_MCST::Backpropagate(Node* node, float score) {
 		node = node->parent;
 	}
 }
+
+#pragma endregion

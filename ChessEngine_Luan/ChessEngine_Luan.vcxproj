@@ -143,6 +143,7 @@
   <ItemGroup>
     <ClInclude Include="AbstractGame.h" />
     <ClInclude Include="ChessAI.h" />
+    <ClInclude Include="ChessAIHelpers.h" />
     <ClInclude Include="ChessAI_Versions.h" />
     <ClInclude Include="ChessBoard.h" />
     <ClInclude Include="ChessEngine.h" />

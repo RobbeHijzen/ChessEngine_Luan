@@ -77,6 +77,9 @@
     <ClInclude Include="ChessAI_Versions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ChessAIHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="big.ico">

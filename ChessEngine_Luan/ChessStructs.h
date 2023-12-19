@@ -210,3 +210,4 @@ struct BitMasks
 	std::vector<uint64_t> bitMasks;
 
 };
+

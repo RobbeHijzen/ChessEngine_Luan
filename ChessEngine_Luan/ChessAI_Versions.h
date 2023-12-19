@@ -1,5 +1,6 @@
 #pragma once
 #include "ChessAI.h"
+#include "ChessAIHelpers.h"
 
 class ChessAI_V0 final : public ChessAI
 {
@@ -17,6 +18,8 @@ public:
 
 
 };
+
+#pragma region AlphaBeta
 
 class ChessAI_V1_AlphaBeta final : public ChessAI
 {
@@ -37,27 +40,38 @@ private:
 	virtual float BoardValueEvaluation(GameState gameState) override;
 };
 
+class ChessAI_V2_AlphaBeta final : public ChessAI
+{
+public:
+	ChessAI_V2_AlphaBeta(ChessBoard* chessBoard, bool controllingWhite) : ChessAI(chessBoard, controllingWhite) {};
+	~ChessAI_V2_AlphaBeta() = default;
 
-struct Node {
+	ChessAI_V2_AlphaBeta(const ChessAI_V2_AlphaBeta& other) = delete;
+	ChessAI_V2_AlphaBeta(ChessAI_V2_AlphaBeta&& other) = delete;
+	ChessAI_V2_AlphaBeta& operator=(const ChessAI_V2_AlphaBeta& other) = delete;
+	ChessAI_V2_AlphaBeta& operator=(ChessAI_V2_AlphaBeta&& other) noexcept = delete;
 
-	Node(const Move& _move = {}, Node* _parent = nullptr, const GameState& _gameState = {}) : move{ _move }, parent{ _parent }, gameState{ _gameState } {}
-	~Node()
-	{
-		parent = nullptr;
-		for (auto node : children)
-		{
-			delete node;
-		}
-	}
+	virtual Move GetAIMove() override;
 
-	Move move;
-	int visits{};
-	float totalScore{};
-	std::vector<Node*> children{};
-	Node* parent{};
+private:
 
-	GameState gameState{};
+	const float m_MoveAmountValue{ 10.f };
+	const int m_MoveAmountOffset{ 20 };
+	const PieceSquareTables m_PieceTables{};
+
+	float DepthSearch(int depth, float alpha, float beta);
+	virtual float BoardValueEvaluation(GameState gameState) override;
+
+
+	float MaterialBalance(GameState gameState);
+	float MoveBalance(GameState gameState);
+
+
+	int AmountOfPieces(uint64_t bitBoard);
 };
+
+#pragma endregion
+#pragma region Monte Carlo Search Tree
 
 class ChessAI_V1_MCST final : public ChessAI
 {
@@ -89,3 +103,4 @@ private:
 
 };
 
+#pragma endregion
