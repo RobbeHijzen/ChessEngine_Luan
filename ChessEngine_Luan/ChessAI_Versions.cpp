@@ -1,4 +1,6 @@
 #include "ChessAI_Versions.h"
+#include <execution>
+#include <ranges>
 
 #define FLOAT_MAX FLT_MAX
 #define FLOAT_MIN -FLOAT_MAX
@@ -19,6 +21,8 @@ Move ChessAI_V0::GetAIMove()
 #pragma region V1
 Move ChessAI_V1_AlphaBeta::GetAIMove()
 {
+	m_StartTimePoint = std::chrono::steady_clock::now();
+
 	int depth{ 3 };
 
 	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
@@ -48,6 +52,8 @@ Move ChessAI_V1_AlphaBeta::GetAIMove()
 }
 float ChessAI_V1_AlphaBeta::DepthSearch(int depth, float alpha, float beta)
 {
+	m_CurrentTimePoint = std::chrono::steady_clock::now();
+
 	bool isMinimizer{ !bool(depth & 1) };
 
 	if (depth == 0) return BoardValueEvaluation(m_pChessBoard->GetCurrentGameState());
@@ -141,7 +147,9 @@ float ChessAI_V1_AlphaBeta::BoardValueEvaluation(GameState gameState)
 #pragma region V2
 Move ChessAI_V2_AlphaBeta::GetAIMove()
 {
-	int depth{ 4 };
+	m_StartTimePoint = std::chrono::steady_clock::now();
+
+	int depth{ 5 };
 
 	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
 	if (possibleMoves.size() == 1) return possibleMoves.front();
@@ -151,37 +159,33 @@ Move ChessAI_V2_AlphaBeta::GetAIMove()
 	float alpha{ FLOAT_MIN };
 	float beta{ FLOAT_MAX };
 
-	for (int index{}; index < possibleMoves.size(); ++index)
+	std::for_each(std::execution::par, possibleMoves.begin(), possibleMoves.end(), [&](Move move)
 	{
+		ChessBoard copyBoard{ *m_pChessBoard };
+		copyBoard.MakeMove(move);
 
-		auto it{ possibleMoves.begin() };
-		std::advance(it, index);
-		Move move{ *it };
-
-		m_pChessBoard->MakeMove(move);
-
-		float moveValue{ DepthSearch(depth - 1, alpha, beta) };
-		if (moveValue > currentBestValue) { currentBestMove = move; currentBestValue = moveValue; }
-
-		m_pChessBoard->UnMakeLastMove();
-	}
-
+		float moveValue{ DepthSearch(depth - 1, alpha, beta, &copyBoard) };
+		if (moveValue > currentBestValue) { currentBestMove = move; currentBestValue = moveValue; }		
+	});
 	return currentBestMove;
 }
-float ChessAI_V2_AlphaBeta::DepthSearch(int depth, float alpha, float beta)
+float ChessAI_V2_AlphaBeta::DepthSearch(int depth, float alpha, float beta, ChessBoard* pChessBoard)
 {
+	m_CurrentTimePoint = std::chrono::steady_clock::now();
+
 	bool isMinimizer{ !bool(depth & 1) };
 
-	if (depth == 0) return BoardValueEvaluation(m_pChessBoard->GetCurrentGameState());
 
-	auto possibleMoves{ m_pChessBoard->GetPossibleMoves() };
+	if (depth == 0) return BoardValueEvaluation(pChessBoard->GetCurrentGameState());
+
+	auto possibleMoves{ pChessBoard->GetPossibleMoves() };
 	float currentMoveValue{ isMinimizer ? FLOAT_MAX : FLOAT_MIN };
 
 	for (const auto& move : possibleMoves)
 	{
-		m_pChessBoard->MakeMove(move);
-		float moveValue{ DepthSearch(depth - 1, alpha, beta) };
-		m_pChessBoard->UnMakeLastMove();
+		pChessBoard->MakeMove(move);
+		float moveValue{ DepthSearch(depth - 1, alpha, beta, pChessBoard) };
+		pChessBoard->UnMakeLastMove();
 
 		if (!isMinimizer)
 		{
@@ -286,6 +290,8 @@ int ChessAI_V2_AlphaBeta::AmountOfPieces(uint64_t bitBoard)
 
 Move ChessAI_V1_MCST::GetAIMove()
 {
+	m_StartTimePoint = std::chrono::steady_clock::now();
+
 	auto pRoot{ std::make_unique<Node>() };
 	// Initializing the children of pRoot to start the algorithm
 	{

@@ -76,7 +76,7 @@ void ChessEngine::Paint(RECT rect)
 	std::wstring s4{ std::to_wstring(m_pDrawableChessBoard->GetCastleAmount()) };
 	std::wstring s5{ std::to_wstring(m_pDrawableChessBoard->GetPromotionAmount()) };
 	std::wstring s6{ std::to_wstring(m_pDrawableChessBoard->GetCheckAmount()) };
-	std::wstring s7{ std::to_wstring(m_MoveGenerationTime) };
+	std::wstring s7{ std::to_wstring(m_pChessAI_Black->GetCurrentMoveTimer()) };
 	GAME_ENGINE->SetFont(m_pFont.get());
 	GAME_ENGINE->DrawString(s1, 100, 100);
 	GAME_ENGINE->DrawString(s2, 100, 150);
@@ -90,39 +90,7 @@ void ChessEngine::Paint(RECT rect)
 
 void ChessEngine::Tick()
 {
-	if(!m_GameHasEnded)
-	{
-		HandleGameEnd();
-
-		if (!m_GameHasEnded)
-		{
-			if (!m_GameIsPaused || m_MakeNextMove)
-			{
-				m_MakeNextMove = false;
-
-				if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
-				{
-					auto lastUpdate{ std::chrono::steady_clock::now() };
-
-					m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
-					
-					auto now = std::chrono::steady_clock::now();
-					m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
-					lastUpdate = now;
-				}
-				else if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
-				{
-					auto lastUpdate{ std::chrono::steady_clock::now() };
-
-					m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
-
-					auto now = std::chrono::steady_clock::now();
-					m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
-					lastUpdate = now;
-				}
-			}
-		}
-	}
+	
 	
 }
 
@@ -151,6 +119,9 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 				m_pDrawableChessBoard->MakeMove(move);
 				m_HasASquareSelected = false;
 				m_CurrentSelectedSquare = -1;
+				m_MakeNextMove = true;
+
+
 			}
 			else
 			{
@@ -233,6 +204,29 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 		case _T('R'):
 		{
 			m_MakeNextMove = true;
+			while (!m_GameHasEnded)
+			{
+				HandleGameEnd();
+
+				if (!m_GameHasEnded)
+				{
+					if (!m_GameIsPaused && m_MakeNextMove)
+					{
+						m_MakeNextMove = false;
+
+						if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
+						{
+							m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
+							m_MakeNextMove = true;
+						}
+						//else if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
+						//{
+						//	m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
+						//	m_MakeNextMove = true;
+						//}
+					}
+				}
+			}
 			break;
 		}
 		case _T('Z'):

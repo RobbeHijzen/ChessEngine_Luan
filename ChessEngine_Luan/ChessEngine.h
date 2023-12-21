@@ -74,7 +74,7 @@ private:
 
 
 	bool m_GameHasEnded{ false };
-	bool m_GameIsPaused{ true };
+	bool m_GameIsPaused{ false };
 	bool m_MakeNextMove{ false };
 
 	std::unique_ptr<ChessAI> m_pChessAI_White{};

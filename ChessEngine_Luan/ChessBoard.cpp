@@ -10,8 +10,8 @@ ChessBoard::ChessBoard()
 	m_GameStateHistory.resize(5000); // 269 is longest tournament game played, but for search reasons I use 500
 
 
-	//std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
-	std::string FEN{ "rnbqk1nr/ppp2ppp/3bp3/3p4/3P4/2N2N2/PPP1PPPP/R1BQKB1R w KQkq - 0 1" };
+	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
+	//std::string FEN{ "rnbqk1nr/ppp2ppp/3bp3/3p4/3P4/2N2N2/PPP1PPPP/R1BQKB1R w KQkq - 0 1" };
 	
 	//std::string FEN{ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq 0 0" }; // Position 2	(Depth 3 = 97862)
 	//std::string FEN{ "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - 0 0" }; // Position 3
@@ -40,6 +40,7 @@ ChessBoard::ChessBoard()
 	CalculatePossibleMoves();
 
 	UpdateGameStateHistory();
+	m_CurrentOwnThreatMap;
 }
 
 int ChessBoard::StartMoveGenerationTest(int depth)
@@ -328,31 +329,31 @@ void ChessBoard::UpdateThreatMap(Move move, bool useMove)
 	m_CurrentOwnPiecesBitBoard = !m_WhiteToMove ? m_BitBoards.whitePieces : m_BitBoards.blackPieces;
 	m_CurrentOpponentPiecesBitBoard = !m_WhiteToMove ? m_BitBoards.blackPieces : m_BitBoards.whitePieces;
 
-	m_pCurrentOwnThreatMap = !m_WhiteToMove ? &m_BitBoards.whiteThreatMap : &m_BitBoards.blackThreatMap;
-	m_pCurrentOpponentThreatMap = !m_WhiteToMove ? &m_BitBoards.blackThreatMap : &m_BitBoards.whiteThreatMap;
+	m_CurrentOwnThreatMap = !m_WhiteToMove ? m_BitBoards.whiteThreatMap : m_BitBoards.blackThreatMap;
+	m_CurrentOpponentThreatMap = !m_WhiteToMove ? m_BitBoards.blackThreatMap : m_BitBoards.whiteThreatMap;
 	
-	auto tempMovedThreatMap1{ std::make_unique<uint64_t>() };
+	uint64_t tempMovedThreatMap1{};
 	uint64_t mask1{ m_BitMasks.bitMasks[move.targetSquareIndex] };
 	int checkCount{};
 
 	if (m_CurrentPawnsBitBoard & mask1)
-		CalculatePawnThreats(move.targetSquareIndex, tempMovedThreatMap1.get());
+		CalculatePawnThreats(move.targetSquareIndex, &tempMovedThreatMap1);
 	else if (m_CurrentKnightsBitBoard & mask1)
-		CalculateKnightThreats(move.targetSquareIndex, tempMovedThreatMap1.get());
+		CalculateKnightThreats(move.targetSquareIndex, &tempMovedThreatMap1);
 	else if (m_CurrentBishopsBitBoard & mask1)
-		CalculateSlidingThreats(move.targetSquareIndex, tempMovedThreatMap1.get(), 4, 8);
+		CalculateSlidingThreats(move.targetSquareIndex, &tempMovedThreatMap1, 4, 8);
 	else if (m_CurrentRooksBitBoard & mask1)
-		CalculateSlidingThreats(move.targetSquareIndex, tempMovedThreatMap1.get(),0, 4);
+		CalculateSlidingThreats(move.targetSquareIndex, &tempMovedThreatMap1,0, 4);
 	else if (m_CurrentQueensBitBoard & mask1)
-		CalculateSlidingThreats(move.targetSquareIndex, tempMovedThreatMap1.get(), 0, 8);
+		CalculateSlidingThreats(move.targetSquareIndex, &tempMovedThreatMap1, 0, 8);
 	else if (m_CurrentKingBitBoard & mask1)
-		CalculateKingThreats(move.targetSquareIndex, tempMovedThreatMap1.get());
+		CalculateKingThreats(move.targetSquareIndex, &tempMovedThreatMap1);
 	
-	*m_pCurrentOwnThreatMap |= *tempMovedThreatMap1;
-	if ((m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing) & *tempMovedThreatMap1)
+	m_CurrentOwnThreatMap |= tempMovedThreatMap1;
+	if ((m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing) & tempMovedThreatMap1)
 	{
 		++checkCount;
-		UpdateRayMap(*tempMovedThreatMap1, move.targetSquareIndex);
+		UpdateRayMap(tempMovedThreatMap1, move.targetSquareIndex);
 	}
 
 
@@ -360,28 +361,28 @@ void ChessBoard::UpdateThreatMap(Move move, bool useMove)
 	{
 		if (squareIndex == move.targetSquareIndex) continue;
 
-		auto tempMovedThreatMap2{ std::make_unique<uint64_t>() };
+		uint64_t tempMovedThreatMap2{};
 		uint64_t mask{ m_BitMasks.bitMasks[squareIndex] };
 
 		if (m_CurrentPawnsBitBoard & mask)
-			CalculatePawnThreats(squareIndex, tempMovedThreatMap2.get());
+			CalculatePawnThreats(squareIndex, &tempMovedThreatMap2);
 		else if (m_CurrentKnightsBitBoard & mask)
-			CalculateKnightThreats(squareIndex, tempMovedThreatMap2.get());
+			CalculateKnightThreats(squareIndex, &tempMovedThreatMap2);
 		else if (m_CurrentBishopsBitBoard & mask)
-			CalculateSlidingThreats(squareIndex, tempMovedThreatMap2.get(), 4, 8);
+			CalculateSlidingThreats(squareIndex, &tempMovedThreatMap2, 4, 8);
 		else if (m_CurrentRooksBitBoard & mask)
-			CalculateSlidingThreats(squareIndex, tempMovedThreatMap2.get(), 0, 4);
+			CalculateSlidingThreats(squareIndex, &tempMovedThreatMap2, 0, 4);
 		else if (m_CurrentQueensBitBoard & mask)
-			CalculateSlidingThreats(squareIndex, tempMovedThreatMap2.get(), 0, 8);
+			CalculateSlidingThreats(squareIndex, &tempMovedThreatMap2, 0, 8);
 		else if (m_CurrentKingBitBoard & mask)
-			CalculateKingThreats(squareIndex, tempMovedThreatMap2.get());
+			CalculateKingThreats(squareIndex, &tempMovedThreatMap2);
 
-		if ((m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing) & *tempMovedThreatMap2)
+		if ((m_WhiteToMove ? m_BitBoards.whiteKing : m_BitBoards.blackKing) & tempMovedThreatMap2)
 		{
 			++checkCount;
-			UpdateRayMap(*tempMovedThreatMap2, squareIndex);
+			UpdateRayMap(tempMovedThreatMap2, squareIndex);
 		}
-		*m_pCurrentOwnThreatMap |= *tempMovedThreatMap2;
+		m_CurrentOwnThreatMap |= tempMovedThreatMap2;
 	}
 	
 
@@ -389,7 +390,8 @@ void ChessBoard::UpdateThreatMap(Move move, bool useMove)
 	if (checkCount >= 1) m_IsKingInCheck = true;
 	if (checkCount == 2) m_IsKingInDoubleCheck = true;
 
-	
+	m_WhiteToMove ? m_BitBoards.whiteThreatMap = m_CurrentOwnThreatMap : m_BitBoards.blackThreatMap = m_CurrentOwnThreatMap;
+	!m_WhiteToMove ? m_BitBoards.whiteThreatMap = m_CurrentOwnThreatMap : m_BitBoards.blackThreatMap = m_CurrentOwnThreatMap;
 }
 void ChessBoard::UpdateRayMap(uint64_t checkingPieceMap, int targetSquare)
 {
@@ -549,8 +551,8 @@ void ChessBoard::CalculatePossibleMoves()
 	m_CurrentOwnPiecesBitBoard = m_WhiteToMove ? m_BitBoards.whitePieces : m_BitBoards.blackPieces;
 	m_CurrentOpponentPiecesBitBoard = m_WhiteToMove ? m_BitBoards.blackPieces : m_BitBoards.whitePieces;
 
-	m_pCurrentOwnThreatMap = m_WhiteToMove ? &m_BitBoards.whiteThreatMap : &m_BitBoards.blackThreatMap;
-	m_pCurrentOpponentThreatMap = m_WhiteToMove ? &m_BitBoards.blackThreatMap : &m_BitBoards.whiteThreatMap;
+	m_CurrentOwnThreatMap = m_WhiteToMove ? m_BitBoards.whiteThreatMap : m_BitBoards.blackThreatMap;
+	m_CurrentOpponentThreatMap = m_WhiteToMove ? m_BitBoards.blackThreatMap : m_BitBoards.whiteThreatMap;
 
 
 	m_PossibleMoves.clear();
@@ -581,8 +583,9 @@ void ChessBoard::CalculatePossibleMoves()
 			CalculateKingMoves(squareIndex);
 	}
 	
-	//if(originalBoard)
-	//	CheckForIllegalMoves();
+
+	m_WhiteToMove ? m_BitBoards.whiteThreatMap = m_CurrentOwnThreatMap : m_BitBoards.blackThreatMap = m_CurrentOwnThreatMap;
+	!m_WhiteToMove ? m_BitBoards.whiteThreatMap = m_CurrentOwnThreatMap : m_BitBoards.blackThreatMap = m_CurrentOwnThreatMap;
 }
 
 void ChessBoard::CalculatePawnMoves(int squareIndex)
@@ -889,7 +892,7 @@ void ChessBoard::CalculateKingMoves(int squareIndex)
 		if (m_SlidingOffsets.distancesFromEdges[directionIndex][squareIndex] == 0) continue;
 		int directionOffset{ m_SlidingOffsets.squareOffsets[directionIndex] };
 
-		if (*m_pCurrentOpponentThreatMap & m_BitMasks.bitMasks[(squareIndex + directionOffset)]) continue;
+		if (m_CurrentOpponentThreatMap & m_BitMasks.bitMasks[(squareIndex + directionOffset)]) continue;
 		if (m_CurrentOwnPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + directionOffset)] ) continue;
 		
 		else if (m_CurrentOpponentPiecesBitBoard & m_BitMasks.bitMasks[(squareIndex + directionOffset)])
@@ -1122,7 +1125,7 @@ bool ChessBoard::IsOtherKingInCheck()
 
 bool ChessBoard::IsSquareInCheckByOtherColor(int squareIndex)
 {
-	return *m_pCurrentOpponentThreatMap & m_BitMasks.bitMasks[squareIndex];
+	return m_CurrentOpponentThreatMap & m_BitMasks.bitMasks[squareIndex];
 }
 
 
@@ -1131,7 +1134,7 @@ void ChessBoard::CheckForGameEnd()
 	CheckForCheckmate();
 	CheckForFiftyMoveRule();
 	CheckForInsufficientMaterial();
-	//CheckForRepetition();
+	CheckForRepetition();
 }
 void ChessBoard::CheckForCheckmate()
 {

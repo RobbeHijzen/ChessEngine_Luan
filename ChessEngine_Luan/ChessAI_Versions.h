@@ -59,7 +59,7 @@ private:
 	const int m_MoveAmountOffset{ 20 };
 	const PieceSquareTables m_PieceTables{};
 
-	float DepthSearch(int depth, float alpha, float beta);
+	float DepthSearch(int depth, float alpha, float beta, ChessBoard* pChessBoard);
 	virtual float BoardValueEvaluation(GameState gameState) override;
 
 

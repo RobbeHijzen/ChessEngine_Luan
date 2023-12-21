@@ -95,8 +95,8 @@ private:
 	uint64_t m_CurrentOwnPiecesBitBoard{};
 	uint64_t m_CurrentOpponentPiecesBitBoard{};
 
-	uint64_t* m_pCurrentOwnThreatMap{};
-	uint64_t* m_pCurrentOpponentThreatMap{};
+	uint64_t m_CurrentOwnThreatMap{};
+	uint64_t m_CurrentOpponentThreatMap{};
 
 	std::vector<uint64_t> m_PinnedBoards{};
 	uint64_t m_CurrentPinBoard{};
