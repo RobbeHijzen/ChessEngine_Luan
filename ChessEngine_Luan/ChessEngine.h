@@ -68,7 +68,8 @@ private:
 	bool m_HasASquareSelected{ false };
 	int m_CurrentSelectedSquare{};
 
-	std::unique_ptr<Font> m_pFont{};
+	std::unique_ptr<Font> m_pFont1{};
+	std::unique_ptr<Font> m_pFont2{};
 	int m_MoveGenerationTestAmount{};
 	bool m_InMoveGeneration{ false };
 
@@ -76,6 +77,10 @@ private:
 	bool m_GameHasEnded{ false };
 	bool m_GameIsPaused{ false };
 	bool m_MakeNextMove{ false };
+
+
+	bool m_UseWhiteAI{ true };
+	bool m_UseBlackAI{ true };
 
 	std::unique_ptr<ChessAI> m_pChessAI_White{};
 	std::unique_ptr<ChessAI> m_pChessAI_Black{};

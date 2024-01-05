@@ -7,7 +7,7 @@
 ChessBoard::ChessBoard()
 {
 	//m_PossibleMoves.resize(218);
-	m_GameStateHistory.resize(5000); // 269 is longest tournament game played, but for search reasons I use 500
+	m_GameStateHistory.resize(4000); // 269 is longest tournament game played, but for search reasons I use 4000
 
 
 	std::string FEN{ "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" };
@@ -46,6 +46,12 @@ ChessBoard::ChessBoard()
 int ChessBoard::StartMoveGenerationTest(int depth)
 {
 	m_TotalAmount = 0;
+	m_CaptureAmount = 0;
+	m_EnPassantAmount = 0;
+	m_CastleAmount = 0;
+	m_PromotionAmount = 0;
+	m_CheckAmount = 0;
+
 	return MoveGenerationTest(depth, depth);
 }
 int ChessBoard::MoveGenerationTest(int depth, int initialDepth)

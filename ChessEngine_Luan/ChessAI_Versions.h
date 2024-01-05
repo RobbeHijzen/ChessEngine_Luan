@@ -69,6 +69,50 @@ private:
 
 	int AmountOfPieces(uint64_t bitBoard);
 };
+class ChessAI_V3_AlphaBeta final : public ChessAI
+{
+public:
+	ChessAI_V3_AlphaBeta(ChessBoard* chessBoard, bool controllingWhite) : ChessAI(chessBoard, controllingWhite) {};
+	~ChessAI_V3_AlphaBeta() = default;
+
+	ChessAI_V3_AlphaBeta(const ChessAI_V3_AlphaBeta& other) = delete;
+	ChessAI_V3_AlphaBeta(ChessAI_V3_AlphaBeta&& other) = delete;
+	ChessAI_V3_AlphaBeta& operator=(const ChessAI_V3_AlphaBeta& other) = delete;
+	ChessAI_V3_AlphaBeta& operator=(ChessAI_V3_AlphaBeta&& other) noexcept = delete;
+
+	virtual Move GetAIMove() override;
+
+private:
+
+	const float m_MaterialBalanceMult{2.f};
+	const float m_MaterialConsiderationsMult{15.f};
+	const float m_DevelopmentMult{15.f};
+
+	const float m_DoubledPawnsMult{35.f};
+	const float m_IsolatedPawnsMult{35.f};
+	const float m_PassedPawnsMult{35.f};
+
+	const PieceSquareTables m_PieceTables{};
+
+	float DepthSearch(int depth, float alpha, float beta, ChessBoard* pChessBoard);
+	virtual float BoardValueEvaluation(GameState gameState) override;
+
+
+	float MaterialBalance(GameState gameState);
+	float MaterialConsiderations(GameState gameState);
+
+	float PawnStructure(GameState gameState);
+	float DoubledPawns(GameState gameState);
+	float IsolatedPawns(GameState gameState);
+	float PassedPawns(GameState gameState);
+
+	float Development(GameState gameState);
+
+
+	int AmountOfPieces(uint64_t bitBoard);
+
+	uint64_t ColumnMask(int column);
+};
 
 #pragma endregion
 #pragma region Monte Carlo Search Tree

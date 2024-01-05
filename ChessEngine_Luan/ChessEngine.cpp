@@ -33,7 +33,7 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	GAME_ENGINE->SetTitle(_T("ChessEngine_Luan (Robbe Hijzen - 2DAE18)"));					
 	GAME_ENGINE->RunGameLoop(true);		
 	// Set the optional values
-	GAME_ENGINE->SetWidth(1440);
+	GAME_ENGINE->SetWidth(1800);
 	GAME_ENGINE->SetHeight(810);
     GAME_ENGINE->SetFrameRate(1000);
 
@@ -46,10 +46,11 @@ void ChessEngine::Initialize(HINSTANCE hInstance)
 	GAME_ENGINE->SetKeyList(buffer.str());
 
 	
-	m_pFont = std::make_unique<Font>(L"Arial", true, false, false, 50);
+	m_pFont1 = std::make_unique<Font>(L"Arial", true, false, false, 50);
+	m_pFont2 = std::make_unique<Font>(L"Arial", true, false, false, 30);
 
 	m_pDrawableChessBoard = std::make_unique<DrawableChessBoard>();
-	m_pChessAI_White = std::make_unique<ChessAI_V1_AlphaBeta>(m_pDrawableChessBoard.get(), true);
+	m_pChessAI_White = std::make_unique<ChessAI_V3_AlphaBeta>(m_pDrawableChessBoard.get(), true);
 	m_pChessAI_Black = std::make_unique<ChessAI_V2_AlphaBeta>(m_pDrawableChessBoard.get(), false);
 }
 
@@ -76,15 +77,36 @@ void ChessEngine::Paint(RECT rect)
 	std::wstring s4{ std::to_wstring(m_pDrawableChessBoard->GetCastleAmount()) };
 	std::wstring s5{ std::to_wstring(m_pDrawableChessBoard->GetPromotionAmount()) };
 	std::wstring s6{ std::to_wstring(m_pDrawableChessBoard->GetCheckAmount()) };
-	std::wstring s7{ std::to_wstring(m_pChessAI_Black->GetCurrentMoveTimer()) };
-	GAME_ENGINE->SetFont(m_pFont.get());
-	GAME_ENGINE->DrawString(s1, 100, 100);
-	GAME_ENGINE->DrawString(s2, 100, 150);
-	GAME_ENGINE->DrawString(s3, 100, 200);
-	GAME_ENGINE->DrawString(s4, 100, 250);
-	GAME_ENGINE->DrawString(s5, 100, 300);
-	GAME_ENGINE->DrawString(s6, 100, 350);
-	GAME_ENGINE->DrawString(s7, 100, 450);
+	std::wstring s7{ std::to_wstring(abs(m_pChessAI_Black->GetCurrentMoveTimer())) };
+	std::wstring s8{ std::to_wstring(abs(m_pChessAI_White->GetCurrentMoveTimer())) };
+
+	GAME_ENGINE->SetFont(m_pFont2.get());
+	GAME_ENGINE->SetColor(RGB(200, 200, 200));
+	GAME_ENGINE->DrawString(_T("Press M for Move Generation Test:"), 30, 20);
+	GAME_ENGINE->DrawString(_T("(Depth 5)"), 30, 50);
+	GAME_ENGINE->DrawString(_T("Press R to start AI's:"), 30, 500);
+
+	GAME_ENGINE->DrawString(_T("Total Moves:"), 30, 100);
+	GAME_ENGINE->DrawString(_T("Captures:"), 30, 150);
+	GAME_ENGINE->DrawString(_T("EnPassants:"), 30, 200);
+	GAME_ENGINE->DrawString(_T("Castles:"), 30, 250);
+	GAME_ENGINE->DrawString(_T("Promotions:"), 30, 300);
+	GAME_ENGINE->DrawString(_T("Checks:"), 30, 350);
+
+	GAME_ENGINE->DrawString(_T("Black Timer:"), 30, 570);
+	GAME_ENGINE->DrawString(_T("White Timer:"), 30, 620);
+
+	GAME_ENGINE->SetFont(m_pFont1.get());
+	GAME_ENGINE->SetColor(RGB(24, 24, 100));
+	GAME_ENGINE->DrawString(s1, 200, 90);
+	GAME_ENGINE->DrawString(s2, 200, 140);
+	GAME_ENGINE->DrawString(s3, 200, 190);
+	GAME_ENGINE->DrawString(s4, 200, 240);
+	GAME_ENGINE->DrawString(s5, 200, 290);
+	GAME_ENGINE->DrawString(s6, 200, 340);
+
+	GAME_ENGINE->DrawString(s7, 200, 560);
+	GAME_ENGINE->DrawString(s8, 200, 610);
 
 }
 
@@ -214,16 +236,23 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 					{
 						m_MakeNextMove = false;
 
-						if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
+						if (m_UseBlackAI)
 						{
-							m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
-							m_MakeNextMove = true;
+							if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_Black->IsControllingWhite())
+							{
+								m_pDrawableChessBoard->MakeMove(m_pChessAI_Black->GetAIMove());
+								m_MakeNextMove = true;
+							}
 						}
-						//else if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
-						//{
-						//	m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
-						//	m_MakeNextMove = true;
-						//}
+						if (m_UseWhiteAI)
+						{
+							if (m_pDrawableChessBoard->GetWhiteToMove() == m_pChessAI_White->IsControllingWhite())
+							{
+								m_pDrawableChessBoard->MakeMove(m_pChessAI_White->GetAIMove());
+								m_MakeNextMove = true;
+							}
+						}
+						
 					}
 				}
 			}
@@ -240,7 +269,7 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 
 			
 			m_InMoveGeneration = true;
-			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(3);
+			m_MoveGenerationTestAmount = m_pDrawableChessBoard->StartMoveGenerationTest(5);
 
 			auto now = std::chrono::steady_clock::now();
 			m_MoveGenerationTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
