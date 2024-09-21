@@ -155,13 +155,6 @@
     <ClInclude Include="HelperStructs.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="big.ico" />
-    <Image Include="small.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ChessEngine.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

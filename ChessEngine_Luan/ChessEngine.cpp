@@ -78,13 +78,13 @@ void ChessEngine::Paint(RECT rect)
 	std::wstring s5{ std::to_wstring(m_pDrawableChessBoard->GetPromotionAmount()) };
 	std::wstring s6{ std::to_wstring(m_pDrawableChessBoard->GetCheckAmount()) };
 	std::wstring s7{ std::to_wstring(abs(m_pChessAI_Black->GetCurrentMoveTimer())) };
-	std::wstring s8{ std::to_wstring(abs(m_pChessAI_White->GetCurrentMoveTimer())) };
+	//std::wstring s8{ std::to_wstring(abs(m_pChessAI_White->GetCurrentMoveTimer())) };
 
 	GAME_ENGINE->SetFont(m_pFont2.get());
 	GAME_ENGINE->SetColor(RGB(200, 200, 200));
 	GAME_ENGINE->DrawString(_T("Press M for Move Generation Test:"), 30, 20);
 	GAME_ENGINE->DrawString(_T("(Depth 5)"), 30, 50);
-	GAME_ENGINE->DrawString(_T("Press R to start AI's:"), 30, 500);
+	GAME_ENGINE->DrawString(_T("Press R to start AI:"), 30, 500);
 
 	GAME_ENGINE->DrawString(_T("Total Moves:"), 30, 100);
 	GAME_ENGINE->DrawString(_T("Captures:"), 30, 150);
@@ -94,7 +94,7 @@ void ChessEngine::Paint(RECT rect)
 	GAME_ENGINE->DrawString(_T("Checks:"), 30, 350);
 
 	GAME_ENGINE->DrawString(_T("Black Timer:"), 30, 570);
-	GAME_ENGINE->DrawString(_T("White Timer:"), 30, 620);
+	//GAME_ENGINE->DrawString(_T("White Timer:"), 30, 620);
 
 	GAME_ENGINE->SetFont(m_pFont1.get());
 	GAME_ENGINE->SetColor(RGB(24, 24, 100));
@@ -106,21 +106,16 @@ void ChessEngine::Paint(RECT rect)
 	GAME_ENGINE->DrawString(s6, 200, 340);
 
 	GAME_ENGINE->DrawString(s7, 200, 560);
-	GAME_ENGINE->DrawString(s8, 200, 610);
+	//GAME_ENGINE->DrawString(s8, 200, 610);
 
 }
 
 void ChessEngine::Tick()
 {
-	
-	
 }
 
 void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPARAM wParam)
 {	
-	// Insert the code that needs to be executed when the game registers a mouse button action
-
-	// Example:
 	if (isLeft == true && isDown == true && m_FirstFrameMousePress) // is it a left mouse click?
 	{	
 		
@@ -159,63 +154,16 @@ void ChessEngine::MouseButtonAction(bool isLeft, bool isDown, int x, int y, WPAR
 }
 void ChessEngine::MouseWheelAction(int x, int y, int distance, WPARAM wParam)
 {	
-	// Insert the code that needs to be executed when the game registers a mouse wheel action
 }
 
 void ChessEngine::MouseMove(int x, int y, WPARAM wParam)
 {	
-	// Insert the code that needs to be executed when the mouse pointer moves across the game window
-
-	/* Example:
-	if ( x > 261 && x < 261 + 117 ) // check if mouse position is within x coordinates of choice
-	{
-		if ( y > 182 && y < 182 + 33 ) // check if mouse position also is within y coordinates of choice
-		{
-			GAME_ENGINE->MessageBox(_T("Da mouse wuz here."));
-		}
-	}
-	*/
 }
 void ChessEngine::CheckKeyboard()
 {	
-	// Here you can check if a key of choice is held down
-	// Is executed once per frame if the Game Loop is running 
-
-	/* Example:
-	if (GAME_ENGINE->IsKeyDown(_T('K'))) xIcon -= xSpeed;
-	if (GAME_ENGINE->IsKeyDown(_T('L'))) yIcon += xSpeed;
-	if (GAME_ENGINE->IsKeyDown(_T('M'))) xIcon += xSpeed;
-	if (GAME_ENGINE->IsKeyDown(_T('O'))) yIcon -= ySpeed;
-	*/
 }
 void ChessEngine::KeyPressed(TCHAR cKey)
 {	
-	// DO NOT FORGET to use SetKeyList() !!
-
-	// Insert the code that needs to be executed when a key of choice is pressed
-	// Is executed as soon as the key is released
-	// You first need to specify the keys that the game engine needs to watch by using the SetKeyList() method
-
-	/* Example:
-	switch (cKey)
-	{
-	case _T('K'): case VK_LEFT:
-		GAME_ENGINE->MessageBox(_T("Moving left."));
-		break;
-	case _T('L'): case VK_DOWN:
-		GAME_ENGINE->MessageBox(_T("Moving down."));
-		break;
-	case _T('M'): case VK_RIGHT:
-		GAME_ENGINE->MessageBox(_T("Moving right."));
-		break;
-	case _T('O'): case VK_UP:
-		GAME_ENGINE->MessageBox(_T("Moving up."));
-		break;
-	case VK_ESCAPE:
-		GAME_ENGINE->MessageBox(_T("Escape menu."));
-	}
-	*/
-
 	switch (cKey)
 	{
 		case _T('P'):
@@ -280,7 +228,6 @@ void ChessEngine::KeyPressed(TCHAR cKey)
 }
 void ChessEngine::CallAction(Caller* callerPtr)
 {
-	// Insert the code that needs to be executed when a Caller has to perform an action
 }
 
 void ChessEngine::HandleGameEnd()

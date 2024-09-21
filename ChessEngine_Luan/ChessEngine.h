@@ -79,7 +79,7 @@ private:
 	bool m_MakeNextMove{ false };
 
 
-	bool m_UseWhiteAI{ true };
+	bool m_UseWhiteAI{ false };
 	bool m_UseBlackAI{ true };
 
 	std::unique_ptr<ChessAI> m_pChessAI_White{};
